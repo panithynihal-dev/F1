@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "TrackiMetrix",
+    "slug": "trackimetrix-web",
+    "version": "1.0.0",
+    "scheme": "trackimetrix",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "TrackiMetrix",
+      "shortName": "TrackiMetrix",
+      "description": "F1 standings, results and race replays drawn from real car telemetry.",
+      "themeColor": "#0A0A0C",
+      "backgroundColor": "#0A0A0C"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-image",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/F1"
+    }
+  }
+}

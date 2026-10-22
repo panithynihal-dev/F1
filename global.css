@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  background-color: #0a0a0c;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+/* Timing columns line up by digit, not by glyph width. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Loading car (components/ui/LoadingCar.tsx). Timings from the app: wheels 620ms a turn, airflow
+   2.2s a pass, a 90ms tremble on the chassis. */
+.tm-wheel {
+  animation: tm-spin 620ms linear infinite;
+}
+.tm-chassis {
+  animation: tm-shake 90ms linear infinite alternate;
+}
+.tm-streak {
+  position: absolute;
+  right: -30%;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffffff;
+  animation: tm-airflow 2200ms linear infinite;
+}
+@keyframes tm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tm-shake {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(0.9px, 1.4px);
+  }
+}
+@keyframes tm-airflow {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-560%);
+  }
+}
+
+/* Home hero (components/home/CircuitHero.tsx): the circuit wiped on once, left to right. */
+.tm-circuit-glow {
+  filter: drop-shadow(0 0 18px rgba(225, 6, 0, 0.45));
+}
+.tm-circuit-wipe {
+  animation: tm-wipe 1600ms cubic-bezier(0.65, 0, 0.35, 1) 200ms both;
+}
+@keyframes tm-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid #ffa733;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
