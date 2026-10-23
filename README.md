@@ -1,8 +1,12 @@
 # TrackiMetrix — web
 
-The TrackiMetrix Android app, rebuilt as a website: F1 standings, results, the season calendar and
-race replays drawn from real car telemetry. Built with React Native (Expo, react-native-web) and
-NativeWind.
+The TrackiMetrix Android app, rebuilt as a website: F1 standings, results, the season calendar,
+driver and team pages, and race replays drawn from real car telemetry. Built with React Native
+(Expo, react-native-web) and NativeWind.
+
+Replays load four laps at a time (a full race is 300k+ position samples). Links can point at a
+moment: `/replay/<session>?laps=5-8&t=90` opens laps 5–8, ninety seconds in. Keyboard: space to
+play or pause, ← / → to skip ten seconds, + / − to change speed.
 
 All data comes from two free public APIs, called straight from the browser:
 [OpenF1](https://openf1.org) (sessions, laps, positions, car locations) and
@@ -16,6 +20,7 @@ connection falls back to the last good copy.
 npm install
 npm start          # dev server at http://localhost:8081
 npm run typecheck
+npm run lint
 npm run build      # production export to dist/, served under /F1
 ```
 

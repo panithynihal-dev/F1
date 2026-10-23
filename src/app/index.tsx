@@ -2,188 +2,167 @@ import { useQuery } from '@tanstack/react-query';
 import Head from 'expo-router/head';
 import { Text, View } from 'react-native';
 
-import type { DriverStanding, RaceSchedule } from '@/api/types';
-import { CircuitHero } from '@/components/home/CircuitHero';
+import type { ConstructorStanding, RaceSchedule } from '@/api/types';
+import { CircuitVisual } from '@/components/home/CircuitVisual';
 import { Countdown } from '@/components/home/Countdown';
-import { Card, Page, SectionTitle } from '@/components/layout/Page';
-import { StandingRow } from '@/components/StandingRow';
+import { Podium } from '@/components/home/Podium';
+import { TitleFight } from '@/components/home/TitleFight';
+import { WeekendTimeline } from '@/components/home/WeekendTimeline';
+import { Page } from '@/components/layout/Page';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
-import { DriverNumberTile } from '@/components/ui/DriverNumberTile';
+import { TeamBadge } from '@/components/ui/TeamBadge';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
-import { getDriverStandings, getLastRaceResults, getMeetingForDate, getSchedule, nextRace } from '@/data/repository';
-import { formatCircuitTime, formatRaceDate, formatViewerTime, formatViewerWeekday, raceStart, viewerTimeZoneName } from '@/domain/dates';
-import { weekendSessions } from '@/domain/weekend';
+import { getConstructorStandings, getDriverStandings, getLastRaceResults, getMeetingForDate, getSchedule, nextRace } from '@/data/repository';
+import { formatCircuitTime, formatRaceDate, formatViewerTime, raceStart, viewerTimeZoneName } from '@/domain/dates';
+import { isSprintWeekend } from '@/domain/weekend';
+import { useNow } from '@/hooks/useNow';
 
 export default function Home() {
   const schedule = useQuery({ queryKey: ['schedule'], queryFn: getSchedule });
-  const race = schedule.data ? nextRace(schedule.data) : null;
+  // Ticks each minute, so the hero rolls on to the next round once a race starts.
+  const now = useNow();
+  const race = schedule.data ? nextRace(schedule.data, now) : null;
   // Everything below the headline is best-effort: losing the standings or the artwork shouldn't
   // take the whole page down with it.
   const meeting = useQuery({ queryKey: ['meeting', race?.date], queryFn: () => getMeetingForDate(race!.date), enabled: !!race });
-  const standings = useQuery({ queryKey: ['driverStandings'], queryFn: getDriverStandings });
+  const drivers = useQuery({ queryKey: ['driverStandings'], queryFn: getDriverStandings });
+  const constructors = useQuery({ queryKey: ['constructorStandings'], queryFn: getConstructorStandings });
   const lastRace = useQuery({ queryKey: ['lastRace'], queryFn: getLastRaceResults });
 
   if (schedule.isPending) return <PageLoading />;
   if (schedule.isError) {
     return (
       <Page>
-        <ErrorState title="The calendar didn't load" detail={errorMessage(schedule.error)} onRetry={() => schedule.refetch()} />
+        <ErrorState title="The calendar didn’t load" detail={errorMessage(schedule.error)} onRetry={() => schedule.refetch()} />
       </Page>
     );
   }
 
+  const remaining = schedule.data.filter((r) => (raceStart(r) ?? 0) > now);
+  const roundsLeft = remaining.length;
+  // 25 for a Grand Prix win, 8 for a sprint win: the most one driver can still add.
+  const pointsLeft = roundsLeft * 25 + remaining.filter(isSprintWeekend).length * 8;
   return (
     <>
       <Head>
         <title>{race ? `${race.raceName} · TrackiMetrix` : 'TrackiMetrix'}</title>
       </Head>
-      {race ? <Hero race={race} circuitImage={meeting.data?.circuit_image} gmtOffset={meeting.data?.gmt_offset} /> : null}
+      {race ? (
+        <Hero race={race} circuitKey={meeting.data?.circuit_key} circuitImage={meeting.data?.circuit_image} gmtOffset={meeting.data?.gmt_offset} now={now} />
+      ) : null}
+
       <Page>
-        <View className="gap-10 md:flex-row md:gap-8">
-          <View className="gap-10 md:flex-1">
-            {race ? <WeekendCard race={race} /> : null}
+        <View className="gap-14 md:gap-20">
+          {race ? <WeekendTimeline race={race} now={now} /> : null}
+
+          <View className="gap-12 lg:flex-row lg:gap-16">
             {lastRace.data ? (
-              <View>
-                <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {lastRace.data.round}</Text>}>
-                  {`${lastRace.data.raceName} result`}
-                </SectionTitle>
-                <Card className="overflow-hidden">
-                  {lastRace.data.podium.map((result) => (
-                    <StandingRow
-                      key={result.Driver.driverId}
-                      position={result.position}
-                      teamName={result.Constructor.name}
-                      name={`${result.Driver.givenName} ${result.Driver.familyName}`}
-                      detail={result.Constructor.name}
-                      figure={result.Time?.time}
-                      href={`/drivers/${result.Driver.driverId}`}
-                    />
-                  ))}
-                </Card>
+              <View className="gap-5 lg:w-[44%]">
+                <View className="gap-1">
+                  <Text accessibilityRole="header" className="font-display text-[26px] text-white">
+                    {lastRace.data.raceName}
+                  </Text>
+                  <Text className="font-body text-[15px] text-muted">Round {lastRace.data.round} podium</Text>
+                </View>
+                <Podium podium={lastRace.data.podium} />
+                <SecondaryButton href="/results">Full results</SecondaryButton>
+              </View>
+            ) : null}
+
+            {drivers.data?.length ? (
+              <View className="gap-5 lg:flex-1">
+                <View className="gap-1">
+                  <Text accessibilityRole="header" className="font-display text-[26px] text-white">
+                    The title fight
+                  </Text>
+                  <Text className="font-body text-[15px] text-muted">
+                    {roundsLeft ? `${roundsLeft} ${roundsLeft === 1 ? 'round' : 'rounds'} left, up to ${pointsLeft} points still to win` : 'Season complete'}
+                  </Text>
+                </View>
+                <TitleFight standings={drivers.data} />
+                {constructors.data?.length ? <ConstructorsStrip standings={constructors.data} /> : null}
+                <SecondaryButton href="/standings">Full standings</SecondaryButton>
               </View>
             ) : null}
           </View>
-          <View className="md:w-[420px]">{standings.data?.length ? <Championship standings={standings.data} /> : null}</View>
         </View>
       </Page>
     </>
   );
 }
 
-function Hero({ race, circuitImage, gmtOffset }: { race: RaceSchedule; circuitImage?: string | null; gmtOffset?: string | null }) {
+function Hero({
+  race,
+  circuitKey,
+  circuitImage,
+  gmtOffset,
+  now,
+}: {
+  race: RaceSchedule;
+  circuitKey?: number | null;
+  circuitImage?: string | null;
+  gmtOffset?: string | null;
+  now: number;
+}) {
   const start = raceStart(race);
-  const started = start != null && start < Date.now();
+  const started = start != null && start < now;
   const circuitTime = formatCircuitTime(race, gmtOffset);
   return (
     <View className="relative overflow-hidden border-b border-line/60">
-      {/* The red bloom from the app's hero, anchored where the eye starts reading. */}
       <View className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(ellipse at 0% 0%, rgba(225,6,0,0.22), transparent 60%)' } as object} />
-      <View className="mx-auto w-full max-w-page gap-8 px-4 pb-10 pt-8 md:flex-row md:items-center md:px-8 md:pb-16 md:pt-14">
-        <View className="z-10 gap-5 md:flex-1">
+      <View className="mx-auto w-full max-w-page gap-6 px-4 pb-10 pt-8 md:flex-row md:items-center md:px-8 md:pb-14 md:pt-12">
+        <View className="z-10 gap-5 md:w-[52%]">
           <View className="flex-row items-center gap-3">
             <View className="rounded-badge bg-red px-2 py-0.5">
               <Text className="font-body-bold text-[13px] text-white">Round {race.round}</Text>
             </View>
-            <Text className="font-body-semi text-[15px] text-amber">{started ? 'Latest round' : 'Up next'}</Text>
+            <Text className="font-body-semi text-[15px] text-amber">{started ? 'Racing now' : 'Up next'}</Text>
           </View>
           <View className="gap-2">
-            <Text accessibilityRole="header" className="font-display text-[48px] leading-[48px] text-white md:text-[72px] md:leading-[70px]">
+            <Text accessibilityRole="header" className="font-display text-[44px] leading-[44px] text-white md:text-[58px] md:leading-[58px]">
               {race.raceName}
             </Text>
             <Text className="font-body text-[17px] text-muted">
-              {race.Circuit.circuitName}, {race.Circuit.Location.locality}, {race.Circuit.Location.country}
+              {race.Circuit.circuitName}, {race.Circuit.Location.locality}
             </Text>
           </View>
           {start != null && !started ? (
-            <View className="gap-3">
+            <View className="gap-2.5">
               <Countdown to={start} />
               <Text className="font-body text-[15px] text-muted">
                 {formatRaceDate(race)}
-                {race.time ? `, lights out ${formatViewerTime(start)} your time (${viewerTimeZoneName()})` : ''}
-                {circuitTime ? `, ${circuitTime} at the circuit` : ''}
+                {race.time ? `, ${formatViewerTime(start)} your time (${viewerTimeZoneName()})` : ''}
+                {circuitTime ? `, ${circuitTime} local` : ''}
               </Text>
             </View>
           ) : (
             <Text className="font-body text-[16px] text-muted">{formatRaceDate(race)}</Text>
           )}
           <View className="flex-row flex-wrap gap-3">
-            <PrimaryButton href="/results">See latest results</PrimaryButton>
-            <SecondaryButton href="/calendar">Full calendar</SecondaryButton>
+            <PrimaryButton href="/results">Latest results</PrimaryButton>
+            <SecondaryButton href="/calendar">Calendar</SecondaryButton>
           </View>
         </View>
-        <View className="h-[180px] md:h-[380px] md:flex-1">
-          {circuitImage ? <CircuitHero imageUrl={circuitImage} label={`${race.Circuit.circuitName} layout`} /> : null}
+        <View className="h-[240px] md:h-[420px] md:flex-1">
+          <CircuitVisual circuitKey={circuitKey} imageUrl={circuitImage} label={`${race.Circuit.circuitName} layout`} />
         </View>
       </View>
     </View>
   );
 }
 
-/** The weekend's sessions in the visitor's own time — the thing the app never showed. */
-function WeekendCard({ race }: { race: RaceSchedule }) {
-  const sessions = weekendSessions(race);
-  const now = Date.now();
-  const nextIndex = sessions.findIndex((s) => (s.start ?? 0) > now);
+/** The constructors' top three in one line: the other championship, kept in view without a second chart. */
+function ConstructorsStrip({ standings }: { standings: ConstructorStanding[] }) {
   return (
-    <View>
-      <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Your time, {viewerTimeZoneName()}</Text>}>Race weekend</SectionTitle>
-      <Card className="overflow-hidden">
-        {sessions.map((session, i) => {
-          const done = session.start != null && session.start < now && i !== nextIndex;
-          const isNext = i === nextIndex;
-          return (
-            <View key={session.name} className={`flex-row items-center gap-4 border-line/60 px-4 py-3 ${i ? 'border-t' : ''} ${isNext ? 'bg-lifted' : ''}`}>
-              <View className={`h-2 w-2 rounded-full ${isNext ? 'bg-red' : done ? 'bg-line' : 'bg-muted'}`} />
-              <Text className={`flex-1 font-body-semi text-[16px] ${done ? 'text-muted' : 'text-white'}`}>{session.name}</Text>
-              <Text className="w-12 font-body text-[15px] text-muted">{session.start ? formatViewerWeekday(session.start) : ''}</Text>
-              <Text numberOfLines={1} className={`min-w-[84px] text-right font-body-semi text-[15px] tnum ${done ? 'text-muted' : 'text-white'}`}>
-                {session.start && session.hasTime ? formatViewerTime(session.start) : 'TBC'}
-              </Text>
-            </View>
-          );
-        })}
-      </Card>
-    </View>
-  );
-}
-
-function Championship({ standings }: { standings: DriverStanding[] }) {
-  const [leader, ...chasers] = standings;
-  const team = leader.Constructors[0]?.name;
-  const gap = chasers[0] ? Number(leader.points) - Number(chasers[0].points) : null;
-  return (
-    <View>
-      <SectionTitle>Championship</SectionTitle>
-      <Card className="mb-3 flex-row overflow-hidden">
-        <DriverNumberTile teamName={team} number={leader.Driver.permanentNumber} width={112} height={128} />
-        <View className="flex-1 justify-center gap-1 px-4">
-          <Text className="font-body-medium text-[14px] text-muted">Leader</Text>
-          <Text className="font-display text-[26px] leading-[28px] text-white">
-            {leader.Driver.givenName} {leader.Driver.familyName}
-          </Text>
-          <View className="flex-row items-baseline gap-2">
-            <Text className="font-display text-[32px] text-red tnum">{leader.points}</Text>
-            <Text className="font-body text-[14px] text-muted">
-              points{gap != null ? `, ${gap} clear` : ''}
-            </Text>
-          </View>
+    <View className="flex-row flex-wrap gap-2 border-t border-line/60 pt-4">
+      <Text className="w-full font-body-semi text-[14px] text-muted">Constructors</Text>
+      {standings.slice(0, 3).map((s) => (
+        <View key={s.Constructor.constructorId} className="flex-row items-center gap-2 rounded-full border border-line px-3 py-1.5">
+          <Text className="font-display text-[15px] text-muted tnum">{s.position ?? s.positionText}</Text>
+          <TeamBadge teamName={s.Constructor.name} />
+          <Text className="font-body-semi text-[14px] text-white tnum">{s.points}</Text>
         </View>
-      </Card>
-      <Card className="overflow-hidden">
-        {chasers.slice(0, 4).map((s) => (
-          <StandingRow
-            key={s.Driver.driverId}
-            position={s.position ?? s.positionText}
-            teamName={s.Constructors[0]?.name}
-            name={`${s.Driver.givenName} ${s.Driver.familyName}`}
-            figure={`${s.points} pts`}
-            href={`/drivers/${s.Driver.driverId}`}
-          />
-        ))}
-      </Card>
-      <View className="mt-4">
-        <SecondaryButton href="/standings">Full standings</SecondaryButton>
-      </View>
+      ))}
     </View>
   );
 }

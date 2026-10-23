@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 /** The content column every page sits in: one max width, one gutter, room for the phone tab bar. */
 export function Page({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <View className={`mx-auto w-full px-4 pb-28 pt-6 md:px-8 md:pb-16 md:pt-10 ${wide ? 'max-w-[1400px]' : 'max-w-page'}`}>{children}</View>
+    <View className={`mx-auto w-full px-4 pb-12 pt-6 md:px-8 md:pb-16 md:pt-10 ${wide ? 'max-w-[1400px]' : 'max-w-page'}`}>{children}</View>
   );
 }
 
@@ -13,10 +13,10 @@ export function PageTitle({ title, kicker, children }: { title: string; kicker?:
   return (
     <View className="mb-6 flex-row flex-wrap items-end justify-between gap-4 md:mb-8">
       <View className="gap-1">
-        {kicker ? <Text className="font-display-semi text-[17px] text-red">{kicker}</Text> : null}
         <Text accessibilityRole="header" className="font-display text-[40px] leading-[42px] text-white md:text-[52px] md:leading-[54px]">
           {title}
         </Text>
+        {kicker ? <Text className="font-body text-[16px] text-muted">{kicker}</Text> : null}
       </View>
       {children ? <View className="flex-row flex-wrap items-center gap-2">{children}</View> : null}
     </View>

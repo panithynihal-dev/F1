@@ -23,7 +23,8 @@ export function DriverNumberTile({
   const stripe = Math.max(3, width * 0.045);
   return (
     <View
-      className="items-center overflow-hidden rounded-inner"
+      // The hairline keeps a black livery (Mercedes, Williams) from dissolving into the page.
+      className="items-center overflow-hidden rounded-inner border border-white/10"
       style={{ width, height, backgroundColor: livery.background, paddingVertical: height * 0.08 }}
     >
       <View className="flex-1" style={{ width: stripe, backgroundColor: livery.ink }} />

@@ -21,6 +21,7 @@ import { ErrorState, errorMessage, SkeletonRows } from '@/components/ui/States';
 import { getConstructorStandings, getDriverStandings } from '@/data/repository';
 import { useConstructorStats, useDriverStats } from '@/data/useStats';
 import type { StatsScope } from '@/domain/stats';
+import { teamBrand } from '@/domain/teamBrand';
 
 type Tab = 'drivers' | 'constructors';
 
@@ -75,8 +76,9 @@ export default function Standings() {
                     position={s.position ?? s.positionText}
                     teamName={s.Constructors[0]?.name}
                     name={`${s.Driver.givenName} ${s.Driver.familyName}`}
-                    detail={s.Constructors.map((c) => c.name).join(', ')}
+                    detail={[s.Constructors.map((c) => c.name).join(', '), gapText(s.points, drivers.data?.[0]?.points)].filter(Boolean).join(', ')}
                     figure={<Points value={s.points} />}
+                    bar={{ fraction: Number(s.points) / (Number(drivers.data?.[0]?.points) || 1), color: teamBrand(s.Constructors.at(-1)?.name).color }}
                     selected={wide ? selectedId === s.Driver.driverId : undefined}
                     onPress={wide ? () => set({ id: s.Driver.driverId }) : undefined}
                     href={wide ? undefined : `/drivers/${s.Driver.driverId}?scope=${scope}`}
@@ -90,8 +92,9 @@ export default function Standings() {
                     position={s.position ?? s.positionText}
                     teamName={s.Constructor.name}
                     name={s.Constructor.name}
-                    detail={`${s.wins} ${s.wins === '1' ? 'win' : 'wins'}`}
+                    detail={[`${s.wins} ${s.wins === '1' ? 'win' : 'wins'}`, gapText(s.points, constructors.data?.[0]?.points)].filter(Boolean).join(', ')}
                     figure={<Points value={s.points} />}
+                    bar={{ fraction: Number(s.points) / (Number(constructors.data?.[0]?.points) || 1), color: teamBrand(s.Constructor.name).color }}
                     selected={wide ? selectedId === s.Constructor.constructorId : undefined}
                     onPress={wide ? () => set({ id: s.Constructor.constructorId }) : undefined}
                     href={wide ? undefined : `/teams/${s.Constructor.constructorId}?scope=${scope}`}
@@ -115,6 +118,12 @@ export default function Standings() {
     </Page>
   );
 }
+
+/** "52 behind", or nothing for the leader. */
+const gapText = (points: string, leader?: string) => {
+  const gap = Number(leader) - Number(points);
+  return gap > 0 ? `${gap} behind` : null;
+};
 
 const defaultId = (tab: Tab, drivers?: DriverStanding[], constructors?: ConstructorStanding[]) =>
   tab === 'drivers' ? drivers?.[0]?.Driver.driverId : constructors?.[0]?.Constructor.constructorId;

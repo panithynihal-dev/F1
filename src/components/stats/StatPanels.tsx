@@ -102,7 +102,7 @@ export function StatsLoading({ scope }: { scope: StatsScope }) {
 export function StatsError({ onRetry }: { onRetry: () => void }) {
   return (
     <View className="items-start gap-2 py-4">
-      <Text className="font-body text-[15px] text-white">These stats didn't load. The data service may be busy.</Text>
+      <Text className="font-body text-[15px] text-white">These stats didn’t load. The data service may be busy.</Text>
       <SecondaryButton onPress={onRetry}>Try again</SecondaryButton>
     </View>
   );

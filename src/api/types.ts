@@ -30,6 +30,7 @@ export interface Session {
   country_name?: string | null;
   circuit_short_name?: string | null;
   year: number;
+  is_cancelled?: boolean;
 }
 
 export interface DriverPosition {

@@ -113,7 +113,7 @@ export const getSeasonSessionTimeline = () =>
       const [meetings, sessions] = await Promise.all([getMeetings(year), openF1.sessionsForYear(year)]);
       const testing = new Set(meetings.filter((m) => /testing/i.test(m.meeting_name)).map((m) => m.meeting_key));
       return sessions
-        .filter((s) => !testing.has(s.meeting_key) && (sessionStart(s) ?? Infinity) < now)
+        .filter((s) => !testing.has(s.meeting_key) && !s.is_cancelled && (sessionStart(s) ?? Infinity) < now)
         .sort((a, b) => (sessionStart(a) ?? 0) - (sessionStart(b) ?? 0));
     },
     { ttl: TTL.sessionTimeline },

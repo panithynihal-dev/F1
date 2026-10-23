@@ -9,6 +9,7 @@ import Head from 'expo-router/head';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteNav } from '@/components/layout/SiteNav';
 import { sweepExpired } from '@/data/cache';
 
@@ -39,7 +40,10 @@ export default function RootLayout() {
       <View className="flex-1 bg-ground" style={{ opacity: fontsLoaded ? 1 : 0 }}>
         <SiteNav />
         <ScrollView className="flex-1" contentContainerClassName="min-h-full">
-          <Slot />
+          <View className="flex-1">
+            <Slot />
+          </View>
+          <SiteFooter />
         </ScrollView>
       </View>
     </QueryClientProvider>

@@ -17,6 +17,7 @@ export function StandingRow({
   selected,
   onPress,
   trailing,
+  bar,
 }: {
   position?: string | null;
   teamName?: string | null;
@@ -28,6 +29,8 @@ export function StandingRow({
   selected?: boolean;
   onPress?: () => void;
   trailing?: ReactNode;
+  /** A slim bar under the name: this row's share of the leader's figure, in the team's colour. */
+  bar?: { fraction: number; color: string };
 }) {
   const body = (
     <Pressable
@@ -49,6 +52,7 @@ export function StandingRow({
             {detail}
           </Text>
         ) : null}
+        {bar ? <View className="mt-1.5 h-1 rounded-full" style={{ width: `${Math.max(1.5, Math.min(1, bar.fraction) * 100)}%`, backgroundColor: bar.color }} /> : null}
       </View>
       {typeof figure === 'string' ? <Text className="font-body-semi text-[15px] text-white tnum">{figure}</Text> : figure}
       {trailing}

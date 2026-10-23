@@ -28,6 +28,21 @@ export const isLiveRestricted = (error: unknown) =>
 const inFlight = new Map<string, number>();
 const waiting = new Map<string, (() => void)[]>();
 
+// OpenF1's free tier is ~3 requests a *second*, not just 3 at a time: a replay opening fires eight
+// calls at once, and capping concurrency alone still bursts past the limit into 429s. Starts to
+// that host are spaced out as well.
+const MIN_START_GAP_MS: Record<string, number> = { 'api.openf1.org': 350 };
+const nextStart = new Map<string, number>();
+
+async function spaceOut(host: string) {
+  const gap = MIN_START_GAP_MS[host];
+  if (!gap) return;
+  const now = Date.now();
+  const at = Math.max(now, nextStart.get(host) ?? 0);
+  nextStart.set(host, at + gap);
+  if (at > now) await sleep(at - now);
+}
+
 async function acquire(host: string) {
   if ((inFlight.get(host) ?? 0) < MAX_PER_HOST) {
     inFlight.set(host, (inFlight.get(host) ?? 0) + 1);
@@ -56,6 +71,7 @@ export async function getJson<T>(url: string): Promise<T> {
   await acquire(host);
   try {
     for (let attempt = 0; ; attempt++) {
+      await spaceOut(host);
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
       let response: Response;
