@@ -14,7 +14,7 @@ import { TeamBadge } from '@/components/ui/TeamBadge';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { getConstructorStandings, getDriverStandings, getLastRaceResults, getMeetingForDate, getSchedule, nextRace } from '@/data/repository';
 import { formatCircuitTime, formatRaceDate, formatViewerTime, raceStart, viewerTimeZoneName } from '@/domain/dates';
-import { isSprintWeekend } from '@/domain/weekend';
+import { isClinched, maxPointsLeft, racesLeft } from '@/domain/clinch';
 import { useNow } from '@/hooks/useNow';
 
 export default function Home() {
@@ -38,10 +38,10 @@ export default function Home() {
     );
   }
 
-  const remaining = schedule.data.filter((r) => (raceStart(r) ?? 0) > now);
-  const roundsLeft = remaining.length;
-  // 25 for a Grand Prix win, 8 for a sprint win: the most one driver can still add.
-  const pointsLeft = roundsLeft * 25 + remaining.filter(isSprintWeekend).length * 8;
+  const roundsLeft = racesLeft(schedule.data, now);
+  const pointsLeft = maxPointsLeft(schedule.data, 'drivers', now);
+  const champion = drivers.data && isClinched(drivers.data.map((s) => Number(s.points)), pointsLeft) ? drivers.data[0] : null;
+  const roundsWord = `${roundsLeft} ${roundsLeft === 1 ? 'round' : 'rounds'}`;
   return (
     <>
       <Head>
@@ -73,13 +73,19 @@ export default function Home() {
               <View className="gap-5 lg:flex-1">
                 <View className="gap-1">
                   <Text accessibilityRole="header" className="font-display text-[26px] text-white">
-                    The title fight
+                    {champion ? `${champion.Driver.givenName} ${champion.Driver.familyName} is champion` : 'The title fight'}
                   </Text>
                   <Text className="font-body text-[15px] text-muted">
-                    {roundsLeft ? `${roundsLeft} ${roundsLeft === 1 ? 'round' : 'rounds'} left, up to ${pointsLeft} points still to win` : 'Season complete'}
+                    {champion
+                      ? roundsLeft
+                        ? `The ${schedule.data[0]?.season ?? ''} drivers’ title is decided with ${roundsWord} to spare: nobody can make up the gap.`
+                        : `The ${schedule.data[0]?.season ?? ''} drivers’ champion.`
+                      : roundsLeft
+                        ? `${roundsWord} left, up to ${pointsLeft} points still to win`
+                        : 'Season complete'}
                   </Text>
                 </View>
-                <TitleFight standings={drivers.data} />
+                <TitleFight standings={drivers.data} decided={!!champion} />
                 {constructors.data?.length ? <ConstructorsStrip standings={constructors.data} /> : null}
                 <SecondaryButton href="/standings">Full standings</SecondaryButton>
               </View>

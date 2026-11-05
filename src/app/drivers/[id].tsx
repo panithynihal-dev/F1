@@ -11,9 +11,10 @@ import { DriverNumberTile, DriverStatsGrid, StatsError, StatsLoading, TitleRuns 
 import { SecondaryButton } from '@/components/ui/Buttons';
 import { TeamBadge } from '@/components/ui/TeamBadge';
 import { EmptyState, ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
-import { getDriverSeasonRaces, getDriverStandings } from '@/data/repository';
+import { getDriverSeasonRaces, getDriverStandings, getSchedule } from '@/data/repository';
 import { useDriverStats } from '@/data/useStats';
 import { PointsChart } from '@/components/stats/PointsChart';
+import { isClinched, maxPointsLeft, racesLeft } from '@/domain/clinch';
 import { teamBrand } from '@/domain/teamBrand';
 import { useNow } from '@/hooks/useNow';
 
@@ -24,6 +25,7 @@ export default function DriverPage() {
   const races = useQuery({ queryKey: ['driverSeasonRaces', params.id], queryFn: () => getDriverSeasonRaces(params.id) });
   const stats = useDriverStats(params.id, scope);
   const now = useNow(60 * 60_000);
+  const schedule = useQuery({ queryKey: ['schedule'], queryFn: getSchedule });
 
   if (standings.isPending || races.isPending) return <PageLoading />;
   const standing = standings.data?.find((s) => s.Driver.driverId === params.id);
@@ -45,6 +47,13 @@ export default function DriverPage() {
   }
 
   const name = `${driver.givenName} ${driver.familyName}`;
+  // The leader whose gap is bigger than every point still on offer has the title, races to run or not.
+  const roundsLeft = schedule.data ? racesLeft(schedule.data, now) : 0;
+  const champion =
+    standing?.position === '1' &&
+    !!schedule.data &&
+    !!standings.data &&
+    isClinched(standings.data.map((s) => Number(s.points)), maxPointsLeft(schedule.data, 'drivers', now));
   const age = driver.dateOfBirth ? Math.floor((now - Date.parse(driver.dateOfBirth)) / (365.25 * 86_400_000)) : null;
 
   return (
@@ -60,8 +69,12 @@ export default function DriverPage() {
         <DriverNumberTile teamName={team} number={driver.permanentNumber} width={120} height={140} />
         <View className="min-w-[240px] flex-1 gap-1">
           {standing ? (
-            <Text className="font-display-semi text-[17px] text-red">
-              P{standing.position ?? standing.positionText} in the championship, {standing.points} points
+            <Text className={`font-display-semi text-[17px] ${champion ? 'text-gold' : 'text-red'}`}>
+              {champion
+                ? `${schedule.data?.[0]?.season ?? ''} World Champion, ${standing.points} points${
+                    roundsLeft ? `, decided with ${roundsLeft} ${roundsLeft === 1 ? 'round' : 'rounds'} to spare` : ''
+                  }`
+                : `P${standing.position ?? standing.positionText} in the championship, ${standing.points} points`}
             </Text>
           ) : null}
           <Text accessibilityRole="header" className="font-display text-[44px] leading-[46px] text-white md:text-[56px] md:leading-[58px]">

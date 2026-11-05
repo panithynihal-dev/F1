@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import type { DriverStanding } from '@/api/types';
+import { ChampionChip } from '@/components/ui/ChampionChip';
 import { teamBrand } from '@/domain/teamBrand';
 
 /**
@@ -9,7 +10,7 @@ import { teamBrand } from '@/domain/teamBrand';
  * the leader, with how far behind they are. The bars have no track behind them; the leader's full
  * bar is the scale.
  */
-export function TitleFight({ standings, count = 8 }: { standings: DriverStanding[]; count?: number }) {
+export function TitleFight({ standings, count = 8, decided = false }: { standings: DriverStanding[]; count?: number; decided?: boolean }) {
   const leaderPoints = Number(standings[0]?.points) || 1;
   return (
     <View className="gap-2.5">
@@ -25,7 +26,13 @@ export function TitleFight({ standings, count = 8 }: { standings: DriverStanding
                   {s.Driver.givenName} {s.Driver.familyName}
                 </Text>
                 <Text className="font-body-semi text-[15px] text-white tnum">{s.points}</Text>
-                <Text className="w-14 text-right font-body text-[13px] text-muted tnum">{i === 0 ? 'Leader' : `-${leaderPoints - points}`}</Text>
+                {i === 0 && decided ? (
+                  <View className="w-[74px] items-end">
+                    <ChampionChip />
+                  </View>
+                ) : (
+                  <Text className="w-14 text-right font-body text-[13px] text-muted tnum">{i === 0 ? 'Leader' : `-${leaderPoints - points}`}</Text>
+                )}
               </View>
               <View className="ml-7 h-1.5 rounded-full" style={{ width: `${Math.max(2, (points / leaderPoints) * 100) * 0.86}%`, backgroundColor: teamBrand(team).color }} />
             </Pressable>

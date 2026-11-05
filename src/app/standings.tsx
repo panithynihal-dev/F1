@@ -16,12 +16,15 @@ import {
   TitleRuns,
 } from '@/components/stats/StatPanels';
 import { SecondaryButton, TogglePill } from '@/components/ui/Buttons';
+import { ChampionChip } from '@/components/ui/ChampionChip';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { ErrorState, errorMessage, SkeletonRows } from '@/components/ui/States';
-import { getConstructorStandings, getDriverStandings } from '@/data/repository';
+import { getConstructorStandings, getDriverStandings, getSchedule } from '@/data/repository';
 import { useConstructorStats, useDriverStats } from '@/data/useStats';
+import { isClinched, maxPointsLeft, type Championship } from '@/domain/clinch';
 import type { StatsScope } from '@/domain/stats';
 import { teamBrand } from '@/domain/teamBrand';
+import { useNow } from '@/hooks/useNow';
 
 type Tab = 'drivers' | 'constructors';
 
@@ -36,6 +39,17 @@ export default function Standings() {
   const drivers = useQuery({ queryKey: ['driverStandings'], queryFn: getDriverStandings });
   const constructors = useQuery({ queryKey: ['constructorStandings'], queryFn: getConstructorStandings });
   const active = tab === 'drivers' ? drivers : constructors;
+  const schedule = useQuery({ queryKey: ['schedule'], queryFn: getSchedule });
+  const now = useNow();
+  // Whether each title can still be lost: the leader's gap against everything still on offer.
+  const decided = (championship: Championship, points?: string[]) =>
+    !!schedule.data && !!points && isClinched(points.map(Number), maxPointsLeft(schedule.data, championship, now));
+  const driversDecided = decided('drivers', drivers.data?.map((s) => s.points));
+  const constructorsDecided = decided('constructors', constructors.data?.map((s) => s.points));
+  const champions = [
+    driversDecided && drivers.data?.[0] ? `${drivers.data[0].Driver.givenName} ${drivers.data[0].Driver.familyName} has won the drivers’ title` : null,
+    constructorsDecided && constructors.data?.[0] ? `${constructors.data[0].Constructor.name} have won the constructors’ title` : null,
+  ].filter(Boolean);
 
   const set = (next: Partial<{ tab: Tab; scope: StatsScope; id: string | undefined }>) =>
     router.setParams({ tab, scope, id: params.id, ...next });
@@ -47,7 +61,10 @@ export default function Standings() {
       <Head>
         <title>Standings · TrackiMetrix</title>
       </Head>
-      <PageTitle title="Standings" kicker={`${new Date().getUTCFullYear()} season`}>
+      <PageTitle
+        title="Standings"
+        kicker={`${new Date().getUTCFullYear()} season${champions.length ? `. ${champions.join('; ')}, with races still to run.` : ''}`}
+      >
         <TogglePill label="Career stats" active={scope === 'career'} onToggle={() => set({ scope: scope === 'career' ? 'season' : 'career' })} />
       </PageTitle>
       <View className="mb-4 max-w-[420px]">
@@ -78,6 +95,7 @@ export default function Standings() {
                     name={`${s.Driver.givenName} ${s.Driver.familyName}`}
                     detail={[s.Constructors.map((c) => c.name).join(', '), gapText(s.points, drivers.data?.[0]?.points)].filter(Boolean).join(', ')}
                     figure={<Points value={s.points} />}
+                    trailing={i === 0 && driversDecided ? <ChampionChip /> : undefined}
                     bar={{ fraction: Number(s.points) / (Number(drivers.data?.[0]?.points) || 1), color: teamBrand(s.Constructors.at(-1)?.name).color }}
                     selected={wide ? selectedId === s.Driver.driverId : undefined}
                     onPress={wide ? () => set({ id: s.Driver.driverId }) : undefined}
@@ -94,6 +112,7 @@ export default function Standings() {
                     name={s.Constructor.name}
                     detail={[`${s.wins} ${s.wins === '1' ? 'win' : 'wins'}`, gapText(s.points, constructors.data?.[0]?.points)].filter(Boolean).join(', ')}
                     figure={<Points value={s.points} />}
+                    trailing={i === 0 && constructorsDecided ? <ChampionChip /> : undefined}
                     bar={{ fraction: Number(s.points) / (Number(constructors.data?.[0]?.points) || 1), color: teamBrand(s.Constructor.name).color }}
                     selected={wide ? selectedId === s.Constructor.constructorId : undefined}
                     onPress={wide ? () => set({ id: s.Constructor.constructorId }) : undefined}
