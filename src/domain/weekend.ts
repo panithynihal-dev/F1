@@ -27,3 +27,15 @@ export function weekendSessions(race: RaceSchedule): WeekendSession[] {
 }
 
 export const isSprintWeekend = (race: RaceSchedule) => race.Sprint != null;
+
+export type SessionState = 'done' | 'next' | 'upcoming';
+
+/**
+ * The weekend's sessions with where each stands right now. The schedule carries no end times, so a
+ * session counts as done from the moment it starts.
+ */
+export function weekendProgress(race: RaceSchedule, now: number): (WeekendSession & { state: SessionState })[] {
+  const sessions = weekendSessions(race);
+  const nextIndex = sessions.findIndex((s) => (s.start ?? 0) > now);
+  return sessions.map((s, i) => ({ ...s, state: i === nextIndex ? 'next' : s.start != null && s.start <= now ? 'done' : 'upcoming' }));
+}

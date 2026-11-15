@@ -4,8 +4,9 @@ import Head from 'expo-router/head';
 import { useEffect } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import type { QualifyingResult, RaceResult, Session } from '@/api/types';
+import type { QualifyingResult, Session } from '@/api/types';
 import { Card, Page } from '@/components/layout/Page';
+import { Classification, PodiumBand, RaceFacts } from '@/components/results/RaceSummary';
 import { StandingRow } from '@/components/StandingRow';
 import { PrimaryButton } from '@/components/ui/Buttons';
 import { EmptyState, ErrorState, errorMessage, PageLoading, SkeletonRows } from '@/components/ui/States';
@@ -65,15 +66,14 @@ export default function SessionResults() {
 
       <View className="mb-6 gap-5 md:mb-8">
         <View className="flex-row flex-wrap items-end justify-between gap-4">
-          <View className="gap-1">
-            <Text className="font-display-semi text-[17px] text-red">{meetingName}</Text>
-            <Text accessibilityRole="header" className="font-display text-[40px] leading-[42px] text-white md:text-[52px] md:leading-[54px]">
-              {session.session_name}
-            </Text>
-            <Text className="font-body text-[15px] text-muted">
-              {[session.circuit_short_name, start ? new Date(start).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) : null, start ? formatViewerTime(start) : null]
+          <View className="min-w-0 max-w-full shrink gap-1.5">
+            <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red">
+              {[session.session_name, session.circuit_short_name, start ? new Date(start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : null, start ? formatViewerTime(start) : null]
                 .filter(Boolean)
                 .join(', ')}
+            </Text>
+            <Text accessibilityRole="header" className="font-title text-[52px] uppercase leading-[48px] text-paper md:text-[88px] md:leading-[81px]">
+              {meeting?.meeting_name ?? meetingName}
             </Text>
           </View>
           <View className="flex-row gap-2">
@@ -82,7 +82,6 @@ export default function SessionResults() {
         </View>
 
         <View className="flex-row items-center gap-2">
-          <StepButton session={previous} direction="previous" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1" contentContainerClassName="gap-1.5">
             {weekend.map((s) => {
               const active = s.session_key === key;
@@ -90,14 +89,15 @@ export default function SessionResults() {
                 <Link key={s.session_key} href={`/results/${s.session_key}`} replace asChild>
                   <Pressable
                     accessibilityState={{ selected: active }}
-                    className={`rounded-full border px-4 py-2 transition-colors ${active ? 'border-white bg-white' : 'border-line hover:border-muted'}`}
+                    className={`border px-3.5 py-2.5 transition-colors md:px-5 ${active ? 'border-paper bg-paper' : 'border-line hover:border-muted'}`}
                   >
-                    <Text className={`font-body-semi text-[14px] ${active ? 'text-ground' : 'text-muted'}`}>{s.session_name}</Text>
+                    <Text className={`font-display text-[15px] uppercase tracking-[0.04em] md:text-[17px] ${active ? 'text-ground' : 'text-muted'}`}>{s.session_name}</Text>
                   </Pressable>
                 </Link>
               );
             })}
           </ScrollView>
+          <StepButton session={previous} direction="previous" />
           <StepButton session={next} direction="next" />
         </View>
       </View>
@@ -112,8 +112,8 @@ function StepButton({ session, direction }: { session?: Session; direction: 'pre
   const glyph = direction === 'previous' ? '‹' : '›';
   if (!session) {
     return (
-      <View className="h-10 w-10 items-center justify-center rounded-full border border-line/40" accessibilityLabel={`${label} (none)`}>
-        <Text className="font-display text-[24px] leading-[26px] text-line">{glyph}</Text>
+      <View className="h-12 w-12 items-center justify-center border border-line" accessibilityLabel={`${label} (none)`}>
+        <Text className="font-display text-[24px] leading-[26px] text-strong">{glyph}</Text>
       </View>
     );
   }
@@ -121,9 +121,9 @@ function StepButton({ session, direction }: { session?: Session; direction: 'pre
     <Link href={`/results/${session.session_key}`} replace asChild>
       <Pressable
         accessibilityLabel={`${label}: ${session.session_name}`}
-        className="h-10 w-10 items-center justify-center rounded-full border border-line transition-colors hover:border-muted hover:bg-surface active:scale-95"
+        className="h-12 w-12 items-center justify-center border border-strong transition-colors hover:border-paper active:scale-95"
       >
-        <Text className="font-display text-[24px] leading-[26px] text-white">{glyph}</Text>
+        <Text className="font-display text-[24px] leading-[26px] text-paper">{glyph}</Text>
       </Pressable>
     </Link>
   );
@@ -146,7 +146,15 @@ function SessionBody({ session }: { session: Session }) {
   switch (data.kind) {
     case 'race':
     case 'sprint':
-      return <Classification results={data.results} />;
+      return (
+        <View className="gap-3">
+          <PodiumBand results={data.results} />
+          <RaceFacts results={data.results} />
+          <View className="mt-11 md:mt-14">
+            <Classification results={data.results} />
+          </View>
+        </View>
+      );
     case 'qualifying':
       return <QualifyingTable results={data.results} />;
     case 'laps':
@@ -162,61 +170,6 @@ function SessionBody({ session }: { session: Session }) {
 }
 
 const fullName = (r: { Driver: { givenName: string; familyName: string } }) => `${r.Driver.givenName} ${r.Driver.familyName}`;
-
-/**
- * What the right-hand column says for one car. A lapped car's `time` is a gap measured on the lap
- * it finished on ("+2.171" for a car a lap down), which reads as being two seconds behind the car
- * above it — so it's shown as laps down, counted from the winner's total, instead.
- */
-function raceOutcome(r: RaceResult, winnerLaps: number) {
-  if (r.status === 'Finished') return r.Time?.time || 'Finished';
-  if (r.status === 'Lapped' || r.status.startsWith('+')) {
-    const down = winnerLaps - Number(r.laps);
-    return down > 0 ? `+${down} ${down === 1 ? 'lap' : 'laps'}` : 'Lapped';
-  }
-  return r.status === 'Retired' ? `Retired, lap ${r.laps}` : r.status;
-}
-
-/** Classification with what happened to each car: the winner's time, gaps, laps down, retirements. */
-function Classification({ results }: { results: RaceResult[] }) {
-  const fastest = results.find((r) => r.FastestLap?.rank === '1');
-  const winnerLaps = Number(results[0]?.laps) || 0;
-  return (
-    <View className="gap-3">
-      <Card className="overflow-hidden">
-        {results.map((r, i) => {
-          const finished = r.status === 'Finished' || r.status === 'Lapped' || r.status.startsWith('+');
-          const outcome = raceOutcome(r, winnerLaps);
-          const gained = Number(r.grid) > 0 ? Number(r.grid) - Number(r.position) : null;
-          return (
-            <View key={r.Driver.driverId} className={i ? 'border-t border-line/60' : ''}>
-              <StandingRow
-                position={r.positionText === 'R' || r.positionText === 'D' || r.positionText === 'W' ? r.positionText : r.position}
-                teamName={r.Constructor.name}
-                name={fullName(r)}
-                detail={[r.Constructor.name, gained ? `${gained > 0 ? '▲' : '▼'} ${Math.abs(gained)} from P${r.grid}` : r.grid === '0' ? 'From the pit lane' : null]
-                  .filter(Boolean)
-                  .join(', ')}
-                href={`/drivers/${r.Driver.driverId}`}
-                figure={
-                  <View className="items-end">
-                    <Text className={`font-body-semi text-[15px] tnum ${finished ? 'text-white' : 'text-muted'}`}>{outcome}</Text>
-                    <Text className="font-body text-[13px] text-muted tnum">{r.points === '0' ? '' : `${r.points} pts`}</Text>
-                  </View>
-                }
-              />
-            </View>
-          );
-        })}
-      </Card>
-      {fastest ? (
-        <Text className="font-body text-[14px] text-muted">
-          Fastest lap: {fullName(fastest)}, {fastest.FastestLap?.Time?.time} on lap {fastest.FastestLap?.lap}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
 
 function QualifyingTable({ results }: { results: QualifyingResult[] }) {
   return (
@@ -273,8 +226,8 @@ function LapTable({ summaries, provisional, sessionName }: { summaries: DriverLa
   return (
     <View className="gap-3">
       {provisional ? (
-        <View className="flex-row items-center gap-3 rounded-inner border border-amber/45 bg-surface px-4 py-3">
-          <View className="h-5 w-[3px] rounded-full bg-amber" />
+        <View className="flex-row items-center gap-3 border border-amber/45 bg-surface px-4 py-3">
+          <View className="h-5 w-[3px] bg-amber" />
           <Text className="flex-1 font-body text-[15px] text-muted">{PROVISIONAL}</Text>
         </View>
       ) : null}

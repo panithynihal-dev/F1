@@ -5,6 +5,7 @@ import { Text, useWindowDimensions, View } from 'react-native';
 
 import type { ConstructorStanding, DriverStanding } from '@/api/types';
 import { Card, Page, PageTitle } from '@/components/layout/Page';
+import { BattleForSecond } from '@/components/standings/BattleForSecond';
 import { StandingRow } from '@/components/StandingRow';
 import {
   ConstructorPanel,
@@ -22,6 +23,7 @@ import { ErrorState, errorMessage, SkeletonRows } from '@/components/ui/States';
 import { getConstructorStandings, getDriverStandings, getSchedule } from '@/data/repository';
 import { useConstructorStats, useDriverStats } from '@/data/useStats';
 import { isClinched, maxPointsLeft, type Championship } from '@/domain/clinch';
+import { raceStart } from '@/domain/dates';
 import type { StatsScope } from '@/domain/stats';
 import { teamBrand } from '@/domain/teamBrand';
 import { useNow } from '@/hooks/useNow';
@@ -46,10 +48,13 @@ export default function Standings() {
     !!schedule.data && !!points && isClinched(points.map(Number), maxPointsLeft(schedule.data, championship, now));
   const driversDecided = decided('drivers', drivers.data?.map((s) => s.points));
   const constructorsDecided = decided('constructors', constructors.data?.map((s) => s.points));
+  const season = schedule.data?.[0]?.season ?? String(new Date().getUTCFullYear());
   const champions = [
-    driversDecided && drivers.data?.[0] ? `${drivers.data[0].Driver.givenName} ${drivers.data[0].Driver.familyName} has won the drivers’ title` : null,
-    constructorsDecided && constructors.data?.[0] ? `${constructors.data[0].Constructor.name} have won the constructors’ title` : null,
-  ].filter(Boolean);
+    driversDecided && drivers.data?.[0] ? { name: `${drivers.data[0].Driver.givenName} ${drivers.data[0].Driver.familyName}`, rest: ` has won the ${season} drivers’ title.` } : null,
+    constructorsDecided && constructors.data?.[0] ? { name: constructors.data[0].Constructor.name, rest: ' have won the constructors’ title.' } : null,
+  ].filter((c): c is { name: string; rest: string } => c != null);
+  const roundsRun = schedule.data?.filter((r) => (raceStart(r) ?? Infinity) < now).length;
+  const driversLeft = schedule.data ? maxPointsLeft(schedule.data, 'drivers', now) : 0;
 
   const set = (next: Partial<{ tab: Tab; scope: StatsScope; id: string | undefined }>) =>
     router.setParams({ tab, scope, id: params.id, ...next });
@@ -61,34 +66,48 @@ export default function Standings() {
       <Head>
         <title>Standings · TrackiMetrix</title>
       </Head>
-      <PageTitle
-        title="Standings"
-        kicker={`${new Date().getUTCFullYear()} season${champions.length ? `. ${champions.join('; ')}, with races still to run.` : ''}`}
-      >
-        <TogglePill label="Career stats" active={scope === 'career'} onToggle={() => set({ scope: scope === 'career' ? 'season' : 'career' })} />
-      </PageTitle>
-      <View className="mb-4 max-w-[420px]">
-        <SegmentedTabs
-          label="Championship"
-          value={tab}
-          onChange={(value) => set({ tab: value, id: undefined })}
-          options={[
-            { value: 'drivers', label: 'Drivers' },
-            { value: 'constructors', label: 'Constructors' },
-          ]}
-        />
+      <PageTitle title="Standings" kicker={roundsRun != null && schedule.data ? `${season} season, after round ${roundsRun} of ${schedule.data.length}.` : `${season} season.`} />
+      {champions.length ? (
+        <View className="mb-7 gap-2.5 border border-gold/45 md:flex-row md:gap-0" style={{ backgroundImage: 'linear-gradient(90deg, rgba(245,197,24,.14), rgba(245,197,24,.02))' } as object}>
+          {champions.map((c, i) => (
+            <View key={c.name} className={`flex-row items-center gap-3.5 px-5 py-3.5 md:flex-1 md:py-[18px] ${i ? 'md:border-l md:border-gold/30' : ''}`}>
+              <ChampionChip />
+              <Text className="flex-1 font-body text-[16px] text-paper">
+                <Text className="font-body-bold">{c.name}</Text>
+                {c.rest}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <View className="mb-6 gap-2.5 md:flex-row md:items-center md:justify-between">
+        <View className="md:w-[380px]">
+          <SegmentedTabs
+            label="Championship"
+            value={tab}
+            onChange={(value) => set({ tab: value, id: undefined })}
+            options={[
+              { value: 'drivers', label: 'Drivers' },
+              { value: 'constructors', label: 'Constructors' },
+            ]}
+          />
+        </View>
+        <View className="flex-row gap-1.5" accessibilityRole="radiogroup" accessibilityLabel="Stats period">
+          <TogglePill label="This season" active={scope === 'season'} onToggle={() => set({ scope: 'season' })} />
+          <TogglePill label="Career" active={scope === 'career'} onToggle={() => set({ scope: 'career' })} />
+        </View>
       </View>
 
       {active.isError ? (
         <ErrorState title="The standings didn't load" detail={errorMessage(active.error)} onRetry={() => active.refetch()} />
       ) : (
-        <View className="items-start gap-6 md:flex-row">
-          <Card className="w-full overflow-hidden md:flex-1">
+        <View className="items-start gap-8 md:flex-row">
+          <View className="w-full md:flex-1">
             {active.isPending ? (
               <SkeletonRows count={10} />
             ) : tab === 'drivers' ? (
               drivers.data?.map((s, i) => (
-                <View key={s.Driver.driverId} className={i ? 'border-t border-line/60' : ''}>
+                <View key={s.Driver.driverId} className="border-b border-line">
                   <StandingRow
                     position={s.position ?? s.positionText}
                     teamName={s.Constructors[0]?.name}
@@ -105,7 +124,7 @@ export default function Standings() {
               ))
             ) : (
               constructors.data?.map((s, i) => (
-                <View key={s.Constructor.constructorId} className={i ? 'border-t border-line/60' : ''}>
+                <View key={s.Constructor.constructorId} className="border-b border-line">
                   <StandingRow
                     position={s.position ?? s.positionText}
                     teamName={s.Constructor.name}
@@ -121,11 +140,18 @@ export default function Standings() {
                 </View>
               ))
             )}
-          </Card>
+          </View>
 
-          {wide && selectedId ? (
-            <View className="sticky top-6 w-[400px]">
-              {tab === 'drivers' ? (
+          {tab === 'drivers' && !wide && drivers.data ? (
+            <View className="w-full">
+              <BattleForSecond standings={drivers.data} pointsLeft={driversLeft} decided={driversDecided} />
+            </View>
+          ) : null}
+
+          {wide ? (
+            <View className="sticky top-6 w-[400px] gap-4">
+              {tab === 'drivers' && drivers.data ? <BattleForSecond standings={drivers.data} pointsLeft={driversLeft} decided={driversDecided} /> : null}
+              {!selectedId ? null : tab === 'drivers' ? (
                 <DriverPanel standing={drivers.data?.find((s) => s.Driver.driverId === selectedId)} scope={scope} />
               ) : (
                 <ConstructorDetail standing={constructors.data?.find((s) => s.Constructor.constructorId === selectedId)} scope={scope} />
@@ -149,10 +175,7 @@ const defaultId = (tab: Tab, drivers?: DriverStanding[], constructors?: Construc
 
 function Points({ value }: { value: string }) {
   return (
-    <Text className="min-w-[64px] text-right font-body-semi text-[16px] text-white tnum">
-      {value}
-      <Text className="font-body text-[13px] text-muted"> pts</Text>
-    </Text>
+    <Text className="min-w-[56px] text-right font-display text-[24px] text-paper tnum">{value}</Text>
   );
 }
 
@@ -165,7 +188,7 @@ function DriverPanel({ standing, scope }: { standing?: DriverStanding; scope: St
       <View className="flex-row gap-4">
         <DriverNumberTile teamName={team} number={standing.Driver.permanentNumber} width={96} height={112} />
         <View className="flex-1 justify-center gap-0.5">
-          <Text className="font-display text-[28px] leading-[30px] text-white">
+          <Text className="font-title text-[30px] uppercase leading-[28px] text-paper">
             {standing.Driver.givenName} {standing.Driver.familyName}
           </Text>
           <Text className="font-body text-[15px] text-muted">{standing.Constructors.map((c) => c.name).join(', ')}</Text>
@@ -196,7 +219,7 @@ function ConstructorDetail({ standing, scope }: { standing?: ConstructorStanding
       <View className="flex-row gap-4">
         <ConstructorPanel teamName={standing.Constructor.name} width={96} height={112} />
         <View className="flex-1 justify-center gap-0.5">
-          <Text className="font-display text-[28px] leading-[30px] text-white">{standing.Constructor.name}</Text>
+          <Text className="font-title text-[30px] uppercase leading-[28px] text-paper">{standing.Constructor.name}</Text>
           <Text className="font-body text-[15px] text-muted">{standing.Constructor.nationality}</Text>
         </View>
       </View>

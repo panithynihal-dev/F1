@@ -6,39 +6,44 @@ import { ChampionChip } from '@/components/ui/ChampionChip';
 import { teamBrand } from '@/domain/teamBrand';
 
 /**
- * The championship as a race: each driver's points as a bar in their team colour, measured against
- * the leader, with how far behind they are. The bars have no track behind them; the leader's full
- * bar is the scale.
+ * The drivers' standings as a timing tower: position, team stripe, name with a points bar measured
+ * against the leader, the gap, the points. The leader's number is gold only once the title is won.
  */
-export function TitleFight({ standings, count = 8, decided = false }: { standings: DriverStanding[]; count?: number; decided?: boolean }) {
+export function TitleFight({ standings, count = 8, decided = false, compact = false }: { standings: DriverStanding[]; count?: number; decided?: boolean; compact?: boolean }) {
   const leaderPoints = Number(standings[0]?.points) || 1;
   return (
-    <View className="gap-2.5">
+    <View>
       {standings.slice(0, count).map((s, i) => {
         const points = Number(s.points);
-        const team = s.Constructors[s.Constructors.length - 1]?.name;
+        const color = teamBrand(s.Constructors[s.Constructors.length - 1]?.name).color;
         return (
           <Link key={s.Driver.driverId} href={`/drivers/${s.Driver.driverId}`} asChild>
-            <Pressable className="gap-1 rounded-inner px-1 py-0.5 transition-colors hover:bg-white/[0.03]">
-              <View className="flex-row items-baseline gap-2">
-                <Text className="w-5 font-display text-[16px] text-muted tnum">{i + 1}</Text>
-                <Text numberOfLines={1} className="flex-1 font-body-semi text-[15px] text-white">
-                  {s.Driver.givenName} {s.Driver.familyName}
-                </Text>
-                <Text className="font-body-semi text-[15px] text-white tnum">{s.points}</Text>
-                {i === 0 && decided ? (
-                  <View className="w-[74px] items-end">
-                    <ChampionChip />
-                  </View>
-                ) : (
-                  <Text className="w-14 text-right font-body text-[13px] text-muted tnum">{i === 0 ? 'Leader' : `-${leaderPoints - points}`}</Text>
-                )}
+            <Pressable className="flex-row items-center gap-3 border-b border-line py-2.5 transition-colors hover:bg-lifted">
+              <Text className={`w-[26px] font-display text-[24px] tnum ${i === 0 && decided ? 'text-gold' : 'text-muted'}`}>{i + 1}</Text>
+              <View className="h-[30px] w-1" style={{ backgroundColor: color }} />
+              <View className="min-w-0 flex-1">
+                <View className="flex-row items-center gap-2">
+                  <Text numberOfLines={1} className="font-body-semi text-[16px] text-paper">
+                    {compact ? s.Driver.familyName : `${s.Driver.givenName} ${s.Driver.familyName}`}
+                  </Text>
+                  {i === 0 && decided ? <ChampionChip /> : null}
+                </View>
+                <View className="mt-1.5 h-1" style={{ width: `${Math.max(1.5, (points / leaderPoints) * 100)}%`, backgroundColor: color }} />
               </View>
-              <View className="ml-7 h-1.5 rounded-full" style={{ width: `${Math.max(2, (points / leaderPoints) * 100) * 0.86}%`, backgroundColor: teamBrand(team).color }} />
+              <Text className="w-11 text-right font-display text-[16px] text-muted tnum">{i === 0 ? '' : `-${leaderPoints - points}`}</Text>
+              <Text className="w-[46px] text-right font-display text-[24px] text-paper tnum">{s.points}</Text>
             </Pressable>
           </Link>
         );
       })}
     </View>
   );
+}
+
+/** One line on the race behind the leader: how close the next few are, and how much is left. */
+export function fightForSecond(standings: DriverStanding[], pointsLeft: number) {
+  const chasers = standings.slice(1, 6);
+  if (chasers.length < 2) return null;
+  const spread = Number(chasers[0].points) - Number(chasers[chasers.length - 1].points);
+  return `The fight for second: ${chasers.length} drivers inside ${spread} points, with ${pointsLeft} still to win.`;
 }

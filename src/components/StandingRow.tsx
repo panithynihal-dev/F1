@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { RankBadge } from './ui/RankBadge';
-import { TeamBadge } from './ui/TeamBadge';
+import { teamBrand } from '@/domain/teamBrand';
 
 /** The row every ranked list on the site shares: position, team chip, name and detail, a figure. */
 export function StandingRow({
@@ -37,14 +37,12 @@ export function StandingRow({
       onPress={onPress}
       disabled={!href && !onPress}
       accessibilityState={selected != null ? { selected } : undefined}
-      className={`flex-row items-center gap-3 px-4 py-3 transition-colors ${
-        selected ? 'bg-lifted' : href || onPress ? 'hover:bg-white/[0.03]' : ''
-      }`}
+      className={`flex-row items-center gap-3 px-4 py-3 transition-colors md:gap-4 ${selected ? 'bg-lifted' : href || onPress ? 'hover:bg-lifted' : ''}`}
     >
       <RankBadge position={position} />
-      <TeamBadge teamName={teamName} exactColor={teamColor} />
+      <View className="h-8 w-1" style={{ backgroundColor: teamColor ?? teamBrand(teamName).color }} />
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} className="font-body-semi text-[16px] text-white">
+        <Text numberOfLines={1} className="font-body-semi text-[16px] text-paper">
           {name}
         </Text>
         {detail ? (
@@ -52,9 +50,9 @@ export function StandingRow({
             {detail}
           </Text>
         ) : null}
-        {bar ? <View className="mt-1.5 h-1 rounded-full" style={{ width: `${Math.max(1.5, Math.min(1, bar.fraction) * 100)}%`, backgroundColor: bar.color }} /> : null}
+        {bar ? <View className="mt-1.5 h-1" style={{ width: `${Math.max(1.5, Math.min(1, bar.fraction) * 100)}%`, backgroundColor: bar.color }} /> : null}
       </View>
-      {typeof figure === 'string' ? <Text className="font-body-semi text-[15px] text-white tnum">{figure}</Text> : figure}
+      {typeof figure === 'string' ? <Text className="font-display text-[22px] text-paper tnum">{figure}</Text> : figure}
       {trailing}
     </Pressable>
   );

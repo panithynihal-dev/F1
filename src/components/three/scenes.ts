@@ -1,5 +1,3 @@
-// The one entry point to the 3D code. Both scenes are loaded through this single module so three.js
-// ends up in one lazily-loaded chunk, rather than being hoisted into the bundle every page loads
-// because two separate chunks share it.
-export { default as CircuitScene } from './CircuitScene';
+// The one entry point to the 3D code, loaded lazily so three.js stays out of the bundle every page
+// loads. Only the replay uses 3D now; the home hero is a photo carousel.
 export { default as ReplayScene } from './ReplayScene';

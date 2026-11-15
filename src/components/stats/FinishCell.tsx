@@ -1,19 +1,19 @@
 import { Text, View } from 'react-native';
 
-const MEDALS: Record<string, string> = { '1': '#FFD700', '2': '#C0C0C8', '3': '#CD7F32' };
+const MEDALS: Record<string, string> = { '1': '#F5C518', '2': '#C0C0C8', '3': '#CD7F32' };
 
 /**
  * One race's finish as a small square — podiums in their medal colour, points finishes lifted, the
  * rest quiet, retirements struck through — so a season reads at a glance as a row of them.
  */
-export function FinishCell({ position, classified, points }: { position: string; classified: boolean; points: number }) {
+export function FinishCell({ position, classified, points, size = 36 }: { position: string; classified: boolean; points: number; size?: number }) {
   const medal = classified ? MEDALS[position] : undefined;
   return (
     <View
-      className={`h-9 w-9 items-center justify-center rounded-badge ${medal ? '' : points > 0 ? 'bg-lifted' : 'border border-line/70'}`}
-      style={medal ? { backgroundColor: medal } : undefined}
+      className={`items-center justify-center ${medal ? '' : points > 0 || classified ? 'bg-lifted' : 'border border-strong'}`}
+      style={{ width: size, height: size, ...(medal ? { backgroundColor: medal } : null) }}
     >
-      <Text className={`font-display text-[16px] tnum ${medal ? 'text-black' : classified ? 'text-white' : 'text-muted line-through'}`}>
+      <Text className={`font-display tnum ${medal ? 'text-ground' : classified ? 'text-paper' : 'text-muted'}`} style={{ fontSize: Math.round(size * 0.44) }}>
         {classified ? position : 'R'}
       </Text>
     </View>

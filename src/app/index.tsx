@@ -1,33 +1,42 @@
 import { useQuery } from '@tanstack/react-query';
 import Head from 'expo-router/head';
-import { Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { Text, View, useWindowDimensions } from 'react-native';
 
-import type { ConstructorStanding, RaceSchedule } from '@/api/types';
-import { CircuitVisual } from '@/components/home/CircuitVisual';
-import { Countdown } from '@/components/home/Countdown';
-import { Podium } from '@/components/home/Podium';
-import { TitleFight } from '@/components/home/TitleFight';
-import { WeekendTimeline } from '@/components/home/WeekendTimeline';
-import { Page } from '@/components/layout/Page';
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
-import { TeamBadge } from '@/components/ui/TeamBadge';
+import type { ConstructorStanding, DriverStanding, RaceSchedule } from '@/api/types';
+import { HeroCarousel, type HeroSlide } from '@/components/home/HeroCarousel';
+import { biggestClimb, Podium } from '@/components/home/Podium';
+import { fightForSecond, TitleFight } from '@/components/home/TitleFight';
+import { WeekendSchedule } from '@/components/home/WeekendSchedule';
+import { Page, SectionTitle } from '@/components/layout/Page';
+import { SecondaryButton } from '@/components/ui/Buttons';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
-import { getConstructorStandings, getDriverStandings, getLastRaceResults, getMeetingForDate, getSchedule, nextRace } from '@/data/repository';
-import { formatCircuitTime, formatRaceDate, formatViewerTime, raceStart, viewerTimeZoneName } from '@/domain/dates';
+import { actionPhoto, celebrationPhoto, circuitPhoto, teamPhoto } from '@/data/photos';
+import { getConstructorStandings, getDriverStandings, getLastRaceResults, getSchedule, nextRace, type LastRaceResults } from '@/data/repository';
 import { isClinched, maxPointsLeft, racesLeft } from '@/domain/clinch';
+import { formatViewerTime, formatViewerWeekday, raceStart, viewerTimeZoneName } from '@/domain/dates';
+import { driverPalette, teamPalette } from '@/domain/helmets';
 import { useNow } from '@/hooks/useNow';
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const ordinalWord = (n: number) => (['first', 'second', 'third'][n - 1] ?? `${n}th`);
 
 export default function Home() {
   const schedule = useQuery({ queryKey: ['schedule'], queryFn: getSchedule });
-  // Ticks each minute, so the hero rolls on to the next round once a race starts.
+  // Ticks each minute, so the page rolls on to the next round once a race starts.
   const now = useNow();
-  const race = schedule.data ? nextRace(schedule.data, now) : null;
-  // Everything below the headline is best-effort: losing the standings or the artwork shouldn't
-  // take the whole page down with it.
-  const meeting = useQuery({ queryKey: ['meeting', race?.date], queryFn: () => getMeetingForDate(race!.date), enabled: !!race });
   const drivers = useQuery({ queryKey: ['driverStandings'], queryFn: getDriverStandings });
   const constructors = useQuery({ queryKey: ['constructorStandings'], queryFn: getConstructorStandings });
   const lastRace = useQuery({ queryKey: ['lastRace'], queryFn: getLastRaceResults });
+  const { width } = useWindowDimensions();
+  const phone = width < 768;
+
+  const race = schedule.data ? nextRace(schedule.data, now) : null;
+  const slides = useMemo(
+    () => (schedule.data ? buildSlides(schedule.data, race, now, drivers.data, constructors.data, lastRace.data) : []),
+    // Minute-level `now` is enough: the countdown on the slide is days / hours / minutes.
+    [schedule.data, race, now, drivers.data, constructors.data, lastRace.data],
+  );
 
   if (schedule.isPending) return <PageLoading />;
   if (schedule.isError) {
@@ -38,56 +47,40 @@ export default function Home() {
     );
   }
 
-  const roundsLeft = racesLeft(schedule.data, now);
   const pointsLeft = maxPointsLeft(schedule.data, 'drivers', now);
-  const champion = drivers.data && isClinched(drivers.data.map((s) => Number(s.points)), pointsLeft) ? drivers.data[0] : null;
-  const roundsWord = `${roundsLeft} ${roundsLeft === 1 ? 'round' : 'rounds'}`;
+  const decided = !!drivers.data && isClinched(drivers.data.map((s) => Number(s.points)), pointsLeft);
+  const afterRound = lastRace.data?.round;
+  const second = drivers.data ? fightForSecond(drivers.data, pointsLeft) : null;
   return (
     <>
       <Head>
         <title>{race ? `${race.raceName} · TrackiMetrix` : 'TrackiMetrix'}</title>
       </Head>
-      {race ? (
-        <Hero race={race} circuitKey={meeting.data?.circuit_key} circuitImage={meeting.data?.circuit_image} gmtOffset={meeting.data?.gmt_offset} now={now} />
-      ) : null}
+      <HeroCarousel slides={slides} />
 
       <Page>
-        <View className="gap-14 md:gap-20">
-          {race ? <WeekendTimeline race={race} now={now} /> : null}
+        <View className="gap-16 md:gap-20">
+          {race && (raceStart(race) ?? 0) > now - 3 * 3_600_000 ? <WeekendSchedule race={race} now={now} /> : null}
 
-          <View className="gap-12 lg:flex-row lg:gap-16">
+          <View className="gap-14 lg:flex-row lg:gap-[72px]">
             {lastRace.data ? (
-              <View className="gap-5 lg:w-[44%]">
-                <View className="gap-1">
-                  <Text accessibilityRole="header" className="font-display text-[26px] text-white">
-                    {lastRace.data.raceName}
-                  </Text>
-                  <Text className="font-body text-[15px] text-muted">Round {lastRace.data.round} podium</Text>
+              <View className="lg:w-[520px]">
+                <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {lastRace.data.round}</Text>}>{lastRace.data.raceName}</SectionTitle>
+                <Podium podium={lastRace.data.podium} results={lastRace.data.results} compact={phone} />
+                <View className="mt-6">
+                  <SecondaryButton href="/results">Full result</SecondaryButton>
                 </View>
-                <Podium podium={lastRace.data.podium} />
-                <SecondaryButton href="/results">Full results</SecondaryButton>
               </View>
             ) : null}
 
             {drivers.data?.length ? (
-              <View className="gap-5 lg:flex-1">
-                <View className="gap-1">
-                  <Text accessibilityRole="header" className="font-display text-[26px] text-white">
-                    {champion ? `${champion.Driver.givenName} ${champion.Driver.familyName} is champion` : 'The title fight'}
-                  </Text>
-                  <Text className="font-body text-[15px] text-muted">
-                    {champion
-                      ? roundsLeft
-                        ? `The ${schedule.data[0]?.season ?? ''} drivers’ title is decided with ${roundsWord} to spare: nobody can make up the gap.`
-                        : `The ${schedule.data[0]?.season ?? ''} drivers’ champion.`
-                      : roundsLeft
-                        ? `${roundsWord} left, up to ${pointsLeft} points still to win`
-                        : 'Season complete'}
-                  </Text>
+              <View className="lg:flex-1">
+                <SectionTitle aside={afterRound ? <Text className="font-body text-[14px] text-muted">After round {afterRound}</Text> : undefined}>Drivers’ standings</SectionTitle>
+                <TitleFight standings={drivers.data} decided={decided} compact={phone} />
+                {second && pointsLeft > 0 ? <Text className="mt-[18px] font-body text-[15px] leading-[22px] text-[#C9CDD3]">{second}</Text> : null}
+                <View className="mt-6">
+                  <SecondaryButton href="/standings">Full standings</SecondaryButton>
                 </View>
-                <TitleFight standings={drivers.data} decided={!!champion} />
-                {constructors.data?.length ? <ConstructorsStrip standings={constructors.data} /> : null}
-                <SecondaryButton href="/standings">Full standings</SecondaryButton>
               </View>
             ) : null}
           </View>
@@ -97,78 +90,129 @@ export default function Home() {
   );
 }
 
-function Hero({
-  race,
-  circuitKey,
-  circuitImage,
-  gmtOffset,
-  now,
-}: {
-  race: RaceSchedule;
-  circuitKey?: number | null;
-  circuitImage?: string | null;
-  gmtOffset?: string | null;
-  now: number;
-}) {
-  const start = raceStart(race);
-  const started = start != null && start < now;
-  const circuitTime = formatCircuitTime(race, gmtOffset);
-  return (
-    <View className="relative overflow-hidden border-b border-line/60">
-      <View className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(ellipse at 0% 0%, rgba(225,6,0,0.22), transparent 60%)' } as object} />
-      <View className="mx-auto w-full max-w-page gap-6 px-4 pb-10 pt-8 md:flex-row md:items-center md:px-8 md:pb-14 md:pt-12">
-        <View className="z-10 gap-5 md:w-[52%]">
-          <View className="flex-row items-center gap-3">
-            <View className="rounded-badge bg-red px-2 py-0.5">
-              <Text className="font-body-bold text-[13px] text-white">Round {race.round}</Text>
-            </View>
-            <Text className="font-body-semi text-[15px] text-amber">{started ? 'Racing now' : 'Up next'}</Text>
-          </View>
-          <View className="gap-2">
-            <Text accessibilityRole="header" className="font-display text-[44px] leading-[44px] text-white md:text-[58px] md:leading-[58px]">
-              {race.raceName}
-            </Text>
-            <Text className="font-body text-[17px] text-muted">
-              {race.Circuit.circuitName}, {race.Circuit.Location.locality}
-            </Text>
-          </View>
-          {start != null && !started ? (
-            <View className="gap-2.5">
-              <Countdown to={start} />
-              <Text className="font-body text-[15px] text-muted">
-                {formatRaceDate(race)}
-                {race.time ? `, ${formatViewerTime(start)} your time (${viewerTimeZoneName()})` : ''}
-                {circuitTime ? `, ${circuitTime} local` : ''}
-              </Text>
-            </View>
-          ) : (
-            <Text className="font-body text-[16px] text-muted">{formatRaceDate(race)}</Text>
-          )}
-          <View className="flex-row flex-wrap gap-3">
-            <PrimaryButton href="/results">Latest results</PrimaryButton>
-            <SecondaryButton href="/calendar">Calendar</SecondaryButton>
-          </View>
-        </View>
-        <View className="h-[240px] md:h-[420px] md:flex-1">
-          <CircuitVisual circuitKey={circuitKey} imageUrl={circuitImage} label={`${race.Circuit.circuitName} layout`} />
-        </View>
-      </View>
-    </View>
-  );
-}
+/** The carousel's slides, from whatever has loaded: next race first, then titles and the last result. */
+function buildSlides(
+  schedule: RaceSchedule[],
+  race: RaceSchedule | null,
+  now: number,
+  drivers?: DriverStanding[],
+  constructors?: ConstructorStanding[],
+  last?: LastRaceResults | null,
+): HeroSlide[] {
+  const slides: HeroSlide[] = [];
+  const season = schedule[0]?.season ?? '';
+  const roundsLeft = racesLeft(schedule, now);
 
-/** The constructors' top three in one line: the other championship, kept in view without a second chart. */
-function ConstructorsStrip({ standings }: { standings: ConstructorStanding[] }) {
-  return (
-    <View className="flex-row flex-wrap gap-2 border-t border-line/60 pt-4">
-      <Text className="w-full font-body-semi text-[14px] text-muted">Constructors</Text>
-      {standings.slice(0, 3).map((s) => (
-        <View key={s.Constructor.constructorId} className="flex-row items-center gap-2 rounded-full border border-line px-3 py-1.5">
-          <Text className="font-display text-[15px] text-muted tnum">{s.position ?? s.positionText}</Text>
-          <TeamBadge teamName={s.Constructor.name} />
-          <Text className="font-body-semi text-[14px] text-white tnum">{s.points}</Text>
-        </View>
-      ))}
-    </View>
-  );
+  const start = race ? raceStart(race) : null;
+  if (race && start) {
+    const left = Math.max(0, start - now);
+    const started = start <= now;
+    const name = race.raceName.replace(' Grand Prix', '');
+    slides.push({
+      key: 'next',
+      label: `${started ? 'Racing now' : 'Up next'}: ${name}`,
+      kicker: `Round ${race.round} of ${schedule.length}`,
+      title: race.raceName.includes('Grand Prix') ? [name, 'Grand Prix'] : [race.raceName],
+      sub: started
+        ? `${race.Circuit.circuitName}. The race is on now.`
+        : `${race.Circuit.circuitName}. Lights out ${formatViewerWeekday(start)} ${race.time ? formatViewerTime(start) : ''} your time (${viewerTimeZoneName()}).`,
+      stats: started
+        ? []
+        : [
+            { value: String(Math.floor(left / 86_400_000)), label: 'days' },
+            { value: String(Math.floor(left / 3_600_000) % 24).padStart(2, '0'), label: 'hours' },
+            { value: String(Math.floor(left / 60_000) % 60).padStart(2, '0'), label: 'min' },
+          ],
+      primary: { label: 'Race weekend', href: '/calendar' },
+      secondary: { label: 'Latest results', href: '/results' },
+      photo: circuitPhoto(race.Circuit.circuitId),
+    });
+  }
+
+  const driversLeft = maxPointsLeft(schedule, 'drivers', now);
+  const leader = drivers?.[0];
+  if (leader && drivers) {
+    const champion = isClinched(drivers.map((s) => Number(s.points)), driversLeft);
+    const team = leader.Constructors[leader.Constructors.length - 1]?.name;
+    const gap = Number(leader.points) - Number(drivers[1]?.points ?? 0);
+    slides.push({
+      key: 'champion',
+      label: `${champion ? 'Champion' : 'Leader'}: ${leader.Driver.familyName}`,
+      kicker: champion ? `${season} World Champion` : 'Championship leader',
+      gold: champion,
+      title: [leader.Driver.givenName, leader.Driver.familyName],
+      palette: driverPalette(leader.Driver.driverId, team),
+      sub: champion
+        ? roundsLeft
+          ? `Title decided with ${plural(roundsLeft, 'round')} still to run. ${team}.`
+          : `The ${season} drivers’ champion. ${team}.`
+        : `${gap} points clear with ${driversLeft} still to win. ${team}.`,
+      stats: [
+        { value: leader.points, label: 'points' },
+        { value: leader.wins, label: 'wins' },
+        { value: `+${gap}`, label: 'clear' },
+      ],
+      primary: { label: 'Driver page', href: `/drivers/${leader.Driver.driverId}` },
+      secondary: { label: 'Standings', href: '/standings' },
+      photo: celebrationPhoto(leader.Driver.driverId),
+    });
+  }
+
+  const winner = last?.podium[0];
+  if (last && winner) {
+    const locality = schedule.find((r) => r.round === last.round)?.Circuit.Location.locality;
+    const climb = biggestClimb(last.results);
+    const fromPole = winner.grid === '1';
+    slides.push({
+      key: 'last',
+      label: `${last.raceName.replace(' Grand Prix', '')}: ${winner.Driver.familyName} wins`,
+      kicker: `Round ${last.round} result`,
+      title: locality ? [`${winner.Driver.familyName} wins`, `in ${locality}`] : [`${winner.Driver.familyName} wins`],
+      palette: driverPalette(winner.Driver.driverId, winner.Constructor.name),
+      sub: [
+        fromPole ? 'Won from pole.' : `Won from ${winner.grid === '0' ? 'the pit lane' : `P${winner.grid}`}.`,
+        climb && climb.result.Driver.driverId !== winner.Driver.driverId
+          ? `${climb.result.Driver.familyName} started P${climb.from} and finished ${ordinalWord(climb.to)}.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      stats: [
+        ...(winner.Time?.time ? [{ value: winner.Time.time, label: 'race time' }] : []),
+        ...(climb ? [{ value: `P${climb.from} to P${climb.to}`, label: climb.result.Driver.familyName }] : []),
+      ],
+      primary: { label: 'Full result', href: '/results' },
+      secondary: { label: 'Standings', href: '/standings' },
+      photo: actionPhoto(winner.Driver.driverId),
+    });
+  }
+
+  const teamLeader = constructors?.[0];
+  if (teamLeader && constructors) {
+    const left = maxPointsLeft(schedule, 'constructors', now);
+    const champion = isClinched(constructors.map((s) => Number(s.points)), left);
+    const runnerUp = constructors[1];
+    const gap = Number(teamLeader.points) - Number(runnerUp?.points ?? 0);
+    const id = teamLeader.Constructor.constructorId;
+    slides.push({
+      key: 'constructors',
+      label: `Constructors: ${teamLeader.Constructor.name}`,
+      kicker: champion ? `${season} Constructors’ Champion` : 'Constructors’ leader',
+      gold: champion,
+      title: [teamLeader.Constructor.name],
+      palette: teamPalette(id, teamLeader.Constructor.name),
+      sub: champion
+        ? `Decided with ${plural(roundsLeft, 'round')} to spare, ${gap} points clear of ${runnerUp?.Constructor.name ?? 'the rest'}.`
+        : `${gap} points clear of ${runnerUp?.Constructor.name ?? 'the rest'}, with ${left} still to win.`,
+      stats: [
+        { value: teamLeader.points, label: 'points' },
+        { value: teamLeader.wins, label: 'wins' },
+        { value: `+${gap}`, label: 'clear' },
+      ],
+      primary: { label: 'Team page', href: `/teams/${id}` },
+      secondary: { label: 'Standings', href: '/standings?tab=constructors' },
+      photo: teamPhoto(id),
+    });
+  }
+  return slides;
 }

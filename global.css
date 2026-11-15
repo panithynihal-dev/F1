@@ -5,8 +5,8 @@
 html,
 body,
 #root {
-  background-color: #0a0a0c;
-  color: #ffffff;
+  background-color: #0e1013;
+  color: #f3f3f1;
   color-scheme: dark;
 }
 
@@ -53,36 +53,20 @@ body,
   }
 }
 
-/* Home hero (components/home/CircuitHero.tsx): the circuit wiped on once, left to right. */
-.tm-circuit-glow {
-  filter: drop-shadow(0 0 18px rgba(225, 6, 0, 0.45));
-}
-.tm-circuit-wipe {
-  animation: tm-wipe 1600ms cubic-bezier(0.65, 0, 0.35, 1) 200ms both;
-}
-@keyframes tm-wipe {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
 /* Replay scrub bar (components/replay/PlaybackControls.tsx): red up to the playhead. */
 .tm-scrub {
   appearance: none;
   height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(to right, #e10600 var(--progress), #3c3c42 var(--progress));
+  border-radius: 0;
+  background: linear-gradient(to right, #e10600 var(--progress), #272c34 var(--progress));
   cursor: pointer;
 }
 .tm-scrub::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
+  border-radius: 0;
+  background: #f3f3f1;
   border: 0;
 }
 .tm-scrub::-moz-range-thumb {
@@ -108,12 +92,61 @@ body,
   }
 }
 
+/* Primary buttons and active badges lean forward like the italic type: the one slanted shape. */
+.tm-slant {
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+
+/* Helmet flow (components/ui/HelmetText.tsx): a name filled with its driver's helmet colours, the
+   colour drifting slowly through the letters. The gradient layers come in as --hf-* variables. */
+.tm-helmet {
+  background-image: var(--hf-a), var(--hf-b), var(--hf-c), linear-gradient(var(--hf-base), var(--hf-base));
+  background-size: 160% 160%, 150% 150%, 170% 170%, 100% 100%;
+  background-position: 0% 0%, 100% 50%, 30% 100%, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: tm-helmet-drift 12s ease-in-out infinite alternate;
+}
+@keyframes tm-helmet-drift {
+  0% {
+    background-position: 0% 0%, 100% 50%, 30% 100%, 0 0;
+  }
+  50% {
+    background-position: 70% 60%, 20% 10%, 90% 40%, 0 0;
+  }
+  100% {
+    background-position: 100% 100%, 60% 90%, 0% 20%, 0 0;
+  }
+}
+
+/* Hero carousel progress bar fills over the slide's time on screen. */
+.tm-progress {
+  transform-origin: left center;
+  animation: tm-progress var(--tm-slide-ms, 8000ms) linear forwards;
+}
+.tm-progress.paused {
+  animation-play-state: paused;
+}
+@keyframes tm-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 :focus-visible {
   outline: 2px solid #ffa733;
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tm-helmet {
+    animation: none;
+  }
   *,
   *::before,
   *::after {

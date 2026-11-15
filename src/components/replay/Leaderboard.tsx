@@ -87,7 +87,7 @@ export function Leaderboard({
                 width: 20,
                 height: 20,
                 borderRadius: 10,
-                border: `2px solid ${tyre?.color ?? '#3C3C42'}`,
+                border: `2px solid ${tyre?.color ?? '#3A404A'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

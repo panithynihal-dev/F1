@@ -1,7 +1,7 @@
 import '../../global.css';
 
 import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold } from '@expo-google-fonts/barlow';
-import { Rajdhani_600SemiBold, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
+import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold_Italic } from '@expo-google-fonts/barlow-condensed';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Slot } from 'expo-router';
@@ -19,9 +19,10 @@ export default function RootLayout() {
   const [queryClient] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 60_000, refetchOnWindowFocus: false } } }),
   );
-  const [fontsLoaded] = useFonts({
-    Rajdhani_600SemiBold,
-    Rajdhani_700Bold,
+  const [fontsLoaded, fontError] = useFonts({
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    BarlowCondensed_800ExtraBold_Italic,
     Barlow_400Regular,
     Barlow_500Medium,
     Barlow_600SemiBold,
@@ -37,7 +38,7 @@ export default function RootLayout() {
       <Head>
         <title>TrackiMetrix</title>
       </Head>
-      <View className="flex-1 bg-ground" style={{ opacity: fontsLoaded ? 1 : 0 }}>
+      <View className="flex-1 bg-ground" style={{ opacity: fontsLoaded || fontError ? 1 : 0 }}>
         <SiteNav />
         <ScrollView className="flex-1" contentContainerClassName="min-h-full">
           <View className="flex-1">

@@ -38,6 +38,8 @@ export const jolpica = {
   constructorStandings,
   schedule: async (season = 'current') =>
     (await get<RaceTable<RaceSchedule>>(`${season}.json`, { limit: 100 })).MRData.RaceTable.Races,
+  /** Every finished round of the season with only its winner: one request for the whole calendar. */
+  seasonWinners: (season = 'current') => races(`${season}/results/1.json`),
   raceResults: async (season: string, round: string): Promise<RaceResult[]> =>
     (await races(`${season}/${round}/results.json`))[0]?.Results ?? [],
   qualifyingResults: async (season: string, round: string): Promise<QualifyingResult[]> =>
@@ -53,6 +55,10 @@ export const jolpica = {
   driverSprints: async (season: string, driverId: string) =>
     (await races(`${season}/drivers/${driverId}/sprint.json`)).flatMap((r) => r.SprintResults ?? []),
   driverRaces: (season: string, driverId: string) => races(`${season}/drivers/${driverId}/results.json`),
+  /** Sprints by round (SprintResults on each race), so they can be added to that round's points. */
+  driverSprintRaces: (season: string, driverId: string) => races(`${season}/drivers/${driverId}/sprint.json`),
+  constructorSprintRaces: (season: string, constructorId: string) => races(`${season}/constructors/${constructorId}/sprint.json`),
+  constructorQualifyingRaces: (season: string, constructorId: string) => races(`${season}/constructors/${constructorId}/qualifying.json`),
   constructorRaces: (season: string, constructorId: string) => races(`${season}/constructors/${constructorId}/results.json`),
   constructorResults: async (season: string, constructorId: string) =>
     (await races(`${season}/constructors/${constructorId}/results.json`)).flatMap((r) => r.Results ?? []),

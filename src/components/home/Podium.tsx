@@ -2,40 +2,61 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import type { RaceResult } from '@/api/types';
-import { DriverNumberTile } from '@/components/ui/DriverNumberTile';
+import { HelmetText } from '@/components/ui/HelmetText';
+import { driverPalette } from '@/domain/helmets';
+import { teamBrand } from '@/domain/teamBrand';
 
-const MEDAL: Record<string, string> = { '1': '#FFD700', '2': '#C0C0C8', '3': '#CD7F32' };
-// Step heights in the podium's own order: second, first, third.
-const STEP = { '1': 92, '2': 64, '3': 44 } as Record<string, number>;
+const MEDAL: Record<string, string> = { '1': '#F5C518', '2': '#C0C0C8', '3': '#CD7F32' };
+const STEP: Record<string, number> = { '1': 150, '2': 108, '3': 78 };
 
-/** The last race's top three standing on an actual podium: second, winner, third. */
-export function Podium({ podium }: { podium: RaceResult[] }) {
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;
+
+/** The driver who gained the most places from the grid (pit-lane starts count as the back). */
+export function biggestClimb(results: RaceResult[]) {
+  const gain = (r: RaceResult) => (Number(r.grid) || results.length) - Number(r.position);
+  const best = [...results].filter((r) => /^\d+$/.test(r.positionText)).sort((a, b) => gain(b) - gain(a))[0];
+  return best && gain(best) > 0 ? { result: best, from: Number(best.grid) || results.length, to: Number(best.position) } : null;
+}
+
+/**
+ * The last race's top three on a podium: second, winner, third, each name in its driver's own
+ * helmet colours, each step capped in the team colour. Under it, the drive of the day by numbers.
+ */
+export function Podium({ podium, results, compact = false }: { podium: RaceResult[]; results?: RaceResult[]; compact?: boolean }) {
   const order = [podium[1], podium[0], podium[2]].filter(Boolean);
+  const climb = results ? biggestClimb(results) : null;
   return (
-    <View className="flex-row items-end gap-2 md:gap-3">
-      {order.map((r) => (
-        <Link key={r.Driver.driverId} href={`/drivers/${r.Driver.driverId}`} asChild>
-          <Pressable className="flex-1 items-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98]">
-            <DriverNumberTile teamName={r.Constructor.name} number={r.Driver.permanentNumber} width={r.position === '1' ? 76 : 64} height={r.position === '1' ? 88 : 74} />
-            <View className="items-center">
-              <Text numberOfLines={1} className="font-display text-[19px] text-white">
-                {r.Driver.familyName}
-              </Text>
-              <Text numberOfLines={1} className="font-body text-[13px] text-muted tnum">
-                {r.position === '1' ? r.Time?.time ?? r.Constructor.name : r.Time?.time ?? r.status}
-              </Text>
-            </View>
-            <View
-              className="w-full items-center justify-start rounded-t-inner pt-2"
-              style={{ height: STEP[r.position], backgroundColor: '#1D1C22', borderTopWidth: 3, borderTopColor: MEDAL[r.position] }}
-            >
-              <Text className="font-display text-[28px] tnum" style={{ color: MEDAL[r.position] }}>
-                {r.position}
-              </Text>
-            </View>
-          </Pressable>
-        </Link>
-      ))}
+    <View>
+      <View className="flex-row items-end gap-2" style={{ height: compact ? 260 : 300 }}>
+        {order.map((r) => (
+          <Link key={r.Driver.driverId} href={`/drivers/${r.Driver.driverId}`} asChild>
+            <Pressable className="flex-1 justify-end gap-2.5" accessibilityLabel={`${r.position}: ${r.Driver.givenName} ${r.Driver.familyName}`}>
+              <View className="items-center">
+                <HelmetText palette={driverPalette(r.Driver.driverId, r.Constructor.name)} size={compact ? 24 : 30} className="text-center">
+                  {r.Driver.familyName}
+                </HelmetText>
+                <Text numberOfLines={1} className="mt-1 font-display text-[16px] text-muted tnum">
+                  {r.Time?.time ?? r.status}
+                </Text>
+              </View>
+              <View className="items-center bg-surface pt-2" style={{ height: STEP[r.position], borderTopWidth: 4, borderTopColor: teamBrand(r.Constructor.name).color }}>
+                <Text className="font-display tnum" style={{ color: MEDAL[r.position], fontSize: compact ? 48 : 60, lineHeight: compact ? 48 : 60 }}>
+                  {r.position}
+                </Text>
+              </View>
+            </Pressable>
+          </Link>
+        ))}
+      </View>
+      {climb ? (
+        <View className="mt-4 flex-row items-center gap-3">
+          <View className="h-10 w-1" style={{ backgroundColor: teamBrand(climb.result.Constructor.name).color }} />
+          <Text className="flex-1 font-body text-[15px] leading-[21px] text-paper">
+            <Text className="font-body-bold">Biggest climb: </Text>
+            {climb.result.Driver.givenName} {climb.result.Driver.familyName}, {ordinal(climb.from)} on the grid to {ordinal(climb.to)} at the flag.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }

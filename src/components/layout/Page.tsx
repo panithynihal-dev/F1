@@ -12,11 +12,11 @@ export function Page({ children, wide = false }: { children: ReactNode; wide?: b
 export function PageTitle({ title, kicker, children }: { title: string; kicker?: string; children?: ReactNode }) {
   return (
     <View className="mb-6 flex-row flex-wrap items-end justify-between gap-4 md:mb-8">
-      <View className="gap-1">
-        <Text accessibilityRole="header" className="font-display text-[40px] leading-[42px] text-white md:text-[52px] md:leading-[54px]">
+      <View className="min-w-0 max-w-full shrink gap-1">
+        <Text accessibilityRole="header" className="font-title text-[56px] uppercase leading-[52px] text-paper md:text-[88px] md:leading-[81px]">
           {title}
         </Text>
-        {kicker ? <Text className="font-body text-[16px] text-muted">{kicker}</Text> : null}
+        {kicker ? <Text className="mt-2 font-body text-[15px] text-muted md:text-[17px]">{kicker}</Text> : null}
       </View>
       {children ? <View className="flex-row flex-wrap items-center gap-2">{children}</View> : null}
     </View>
@@ -26,8 +26,8 @@ export function PageTitle({ title, kicker, children }: { title: string; kicker?:
 /** A section heading inside a page. */
 export function SectionTitle({ children, aside }: { children: string; aside?: ReactNode }) {
   return (
-    <View className="mb-3 flex-row items-baseline justify-between gap-3">
-      <Text accessibilityRole="header" className="font-display text-[24px] text-white">
+    <View className="mb-4 flex-row items-baseline justify-between gap-3">
+      <Text accessibilityRole="header" className="font-title text-[30px] uppercase text-paper md:text-[34px]">
         {children}
       </Text>
       {aside}
@@ -35,7 +35,7 @@ export function SectionTitle({ children, aside }: { children: string; aside?: Re
   );
 }
 
-/** The app's outlined panel: identified by its fill, edged by a quiet border, no shadow. */
+/** The pit-wall panel: a flat fill edged by the kerb line. Square, no shadow. */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <View className={`rounded-card border border-line bg-surface ${className}`}>{children}</View>;
+  return <View className={`border border-line bg-surface ${className}`}>{children}</View>;
 }

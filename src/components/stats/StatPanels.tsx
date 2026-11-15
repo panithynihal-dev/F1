@@ -10,8 +10,8 @@ import { SecondaryButton } from '../ui/Buttons';
 
 export function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <View className="min-w-[96px] flex-1 rounded-inner bg-lifted px-3 py-3">
-      <Text className="font-display text-[30px] leading-[32px] text-white tnum">{value}</Text>
+    <View className="min-w-[96px] flex-1 border border-line bg-surface px-3 py-3">
+      <Text className="font-display text-[32px] leading-[34px] text-paper tnum">{value}</Text>
       <Text className="font-body-medium text-[13px] text-muted">{label}</Text>
     </View>
   );

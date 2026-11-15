@@ -1,9 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-/**
- * An outlined segmented control with a lifted pill behind the selected option — selection reads as
- * a lift off the surface rather than a colour swap.
- */
+/** A square segmented control; the selected option is filled red, the one red thing in the row. */
 export function SegmentedTabs<T extends string>({
   options,
   value,
@@ -16,7 +13,7 @@ export function SegmentedTabs<T extends string>({
   label: string;
 }) {
   return (
-    <View accessibilityRole="tablist" accessibilityLabel={label} className="flex-row rounded-[14px] border border-line p-1">
+    <View accessibilityRole="tablist" accessibilityLabel={label} className="flex-row border border-line p-1">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -25,11 +22,9 @@ export function SegmentedTabs<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            className={`flex-1 items-center rounded-[10px] px-5 py-2.5 transition-colors duration-200 ${
-              selected ? 'bg-lifted' : 'hover:bg-surface'
-            }`}
+            className={`flex-1 items-center px-7 py-2.5 transition-colors duration-200 ${selected ? 'bg-red' : 'hover:bg-surface'}`}
           >
-            <Text className={`font-body-semi text-[15px] ${selected ? 'text-white' : 'text-muted'}`}>{option.label}</Text>
+            <Text className={`font-display text-[18px] uppercase tracking-[0.04em] ${selected ? 'text-white' : 'text-muted'}`}>{option.label}</Text>
           </Pressable>
         );
       })}

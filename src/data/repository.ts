@@ -15,6 +15,36 @@ const currentYear = () => new Date().getUTCFullYear();
 
 export const getSchedule = () => cached('schedule', () => jolpica.schedule('current'), { ttl: TTL.schedule });
 
+export interface RoundWinner {
+  round: string;
+  name: string;
+  code: string;
+  driverId: string;
+  team: string;
+}
+
+/** Who won each round run so far. Refreshed like the standings, since both change on a Sunday. */
+export const getSeasonWinners = () =>
+  cached(
+    'season_winners_v2',
+    async (): Promise<RoundWinner[]> =>
+      (await jolpica.seasonWinners()).flatMap((race) => {
+        const winner = race.Results?.[0];
+        return winner
+          ? [
+              {
+                round: race.round,
+                name: `${winner.Driver.givenName} ${winner.Driver.familyName}`,
+                code: winner.Driver.code ?? winner.Driver.familyName.slice(0, 3).toUpperCase(),
+                driverId: winner.Driver.driverId,
+                team: winner.Constructor.name,
+              },
+            ]
+          : [];
+      }),
+    { ttl: TTL.standings },
+  );
+
 export const getDriverStandings = () => cached('driver_standings', () => jolpica.driverStandings('current'), { ttl: TTL.standings });
 
 export const getConstructorStandings = () =>
@@ -35,7 +65,10 @@ export interface LastRaceResults {
   raceName: string;
   round: string;
   season: string;
+  circuitId: string;
   podium: RaceResult[];
+  /** The whole classification, for facts like the biggest climb. */
+  results: RaceResult[];
 }
 
 /**
@@ -46,10 +79,12 @@ export async function getLastRaceResults(): Promise<LastRaceResults | null> {
   const race = lastStartedRace(await getSchedule());
   if (!race) return null;
   return cached(
-    `last_race_results_${race.season}_${race.round}`,
+    `last_race_results_v2_${race.season}_${race.round}`,
     async () => {
       const results = await jolpica.raceResults(race.season, race.round);
-      return results.length ? { raceName: race.raceName, round: race.round, season: race.season, podium: results.slice(0, 3) } : null;
+      return results.length
+        ? { raceName: race.raceName, round: race.round, season: race.season, circuitId: race.Circuit.circuitId, podium: results.slice(0, 3), results }
+        : null;
     },
     { ttl: TTL.permanent, shouldPersist: (value) => value != null },
   );
@@ -292,3 +327,12 @@ export const getConstructorSeasonRaces = (constructorId: string) =>
   cached(`constructor_season_races_${constructorId}`, () => jolpica.constructorRaces('current', constructorId), {
     ttl: TTL.driverSeasonResults,
   });
+
+// ---- Per-round extras for the driver and team pages ----
+
+export const getDriverSeasonSprintRaces = (driverId: string) =>
+  cached(`driver_sprint_races_${driverId}`, () => jolpica.driverSprintRaces('current', driverId), { ttl: TTL.driverSeasonResults });
+export const getConstructorSeasonSprintRaces = (constructorId: string) =>
+  cached(`constructor_sprint_races_${constructorId}`, () => jolpica.constructorSprintRaces('current', constructorId), { ttl: TTL.driverSeasonResults });
+export const getConstructorSeasonQualifyingRaces = (constructorId: string) =>
+  cached(`constructor_qualifying_races_${constructorId}`, () => jolpica.constructorQualifyingRaces('current', constructorId), { ttl: TTL.driverSeasonResults });

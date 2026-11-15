@@ -4,7 +4,10 @@ import Head from 'expo-router/head';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { Card, Page } from '@/components/layout/Page';
+import { Page } from '@/components/layout/Page';
+import { RaceControlFeed } from '@/components/replay/RaceControlFeed';
+import { HelmetText } from '@/components/ui/HelmetText';
+import { paletteForCode } from '@/domain/helmets';
 import { Leaderboard } from '@/components/replay/Leaderboard';
 import { PlaybackControls, SPEEDS, type Speed } from '@/components/replay/PlaybackControls';
 import { TrackCanvas, type View as MapView } from '@/components/replay/TrackCanvas';
@@ -76,14 +79,14 @@ export default function Replay() {
         <title>{`${title} replay · TrackiMetrix`}</title>
       </Head>
       <View className="mb-4 flex-row flex-wrap items-end justify-between gap-3">
-        <View className="gap-1">
+        <View className="min-w-0 max-w-full shrink gap-1.5">
           <Link href={`/results/${sessionKey}`} asChild>
             <Pressable>
-              <Text className="font-display-semi text-[17px] text-red hover:underline">{title}</Text>
+              <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red hover:underline">Results › {title}</Text>
             </Pressable>
           </Link>
-          <Text accessibilityRole="header" className="font-display text-[40px] leading-[42px] text-white md:text-[52px] md:leading-[54px]">
-            Replay
+          <Text accessibilityRole="header" className="font-title text-[44px] uppercase leading-[42px] text-paper md:text-[64px] md:leading-[60px]">
+            {(meeting?.meeting_name ?? 'Race').replace('Grand Prix', 'GP')} replay
           </Text>
         </View>
         <SafetyCarSummary bundle={bundle.data} />
@@ -114,9 +117,22 @@ export default function Replay() {
   );
 }
 
+/** Who leads right now, as a title-sized name in their own helmet colours. */
+function LeaderCallout({ acronym, name, team, wide }: { acronym: string; name: string; team?: string | null; wide: boolean }) {
+  const family = name.split(' ').slice(-1)[0] ?? acronym;
+  return (
+    <View className="flex-row items-baseline gap-2.5 border border-line px-3 py-1" accessibilityLabel={`Leader: ${name}`}>
+      <Text className="font-display-semi text-[13px] uppercase tracking-[0.06em] text-muted">Leader</Text>
+      <HelmetText palette={paletteForCode(acronym, team)} size={wide ? 34 : 26}>
+        {family}
+      </HelmetText>
+    </View>
+  );
+}
+
 function ReplayLoading({ caption, inline = false }: { caption: string; inline?: boolean }) {
   return (
-    <View className={`items-center justify-center gap-4 ${inline ? 'min-h-[420px] rounded-card border border-line bg-surface' : 'flex-1 py-24'}`}>
+    <View className={`items-center justify-center gap-4 ${inline ? 'min-h-[420px] border border-line bg-surface' : 'flex-1 py-24'}`}>
       <LoadingCar width={280} />
       <Text className="font-body text-[15px] text-muted">{caption}</Text>
     </View>
@@ -159,9 +175,9 @@ function LapWindowChips({
             key={`${w.first}-${w.last}`}
             onPress={() => onSelect(w)}
             accessibilityState={{ selected: active }}
-            className={`rounded-full border px-3.5 py-1.5 transition-colors ${active ? 'border-red bg-red' : 'border-line hover:border-muted'}`}
+            className={`border px-3.5 py-2 transition-colors ${active ? 'border-paper bg-paper' : 'border-line hover:border-muted'}`}
           >
-            <Text className={`font-body-semi text-[14px] tnum ${active ? 'text-white' : 'text-muted'}`}>{formatLapRange(w)}</Text>
+            <Text className={`font-display text-[15px] tnum ${active ? 'text-ground' : 'text-muted'}`}>{formatLapRange(w)}</Text>
           </Pressable>
         );
       })}
@@ -301,6 +317,18 @@ function ReplayStage({
   const incident = data.incidents.filter((i) => elapsed - i.showFromMs >= 0 && elapsed - i.showFromMs < INCIDENT_DISPLAY_MS).at(-1);
   const rows = rowsAt(leaderboardSource, at, currentLap);
 
+  // Yellow and red flags in this window, marked on the scrub bar so the dramatic moments are findable.
+  const flagMarkers = useMemo(
+    () =>
+      bundle.raceControl.flatMap((m) => {
+        const t = Date.parse(m.date) - data.windowStart;
+        const red = m.flag === 'RED';
+        const yellow = m.flag === 'YELLOW' || m.flag === 'DOUBLE YELLOW' || /SAFETY CAR DEPLOYED/.test(m.message);
+        return (red || yellow) && t >= 0 && t <= data.durationMs ? [{ ms: t, color: red ? '#E10600' : '#FFC400', label: m.message }] : [];
+      }),
+    [bundle.raceControl, data.windowStart, data.durationMs],
+  );
+
   const windows = lapWindows(bundle.totalLaps, anchor);
   const nextWindow = windows.find((w) => w.first > data.lapRange.first);
   const ended = !playing && elapsed >= data.durationMs;
@@ -310,10 +338,11 @@ function ReplayStage({
       <View className="min-w-0 flex-1 gap-3">
         <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
           <FlagLight flag={flag} />
-          <Text className="font-display text-[26px] text-white tnum">
+          <Text className="font-display text-[26px] text-paper tnum">
             Lap {currentLap}
-            <Text className="text-muted">/{bundle.totalLaps}</Text>
+            <Text className="text-muted"> / {bundle.totalLaps}</Text>
           </Text>
+          {rows[0] ? <LeaderCallout acronym={rows[0].acronym} name={rows[0].name} team={rows[0].teamName} wide={wide} /> : null}
           {formation ? <Badge tone="muted">Formation lap</Badge> : null}
           {safetyCar ? <Badge tone="yellow">Safety car</Badge> : null}
           <View className="ml-auto">
@@ -325,14 +354,14 @@ function ReplayStage({
                 const target = lapWindows(bundle.totalLaps, restartLap).find((w) => w.first === restartLap);
                 if (target) onSelectWindow(target, restartLap);
               }}
-              className="rounded-full bg-white px-3.5 py-1.5 active:scale-95"
+              className="bg-paper px-3.5 py-1.5 active:scale-95"
             >
               <Text className="font-body-bold text-[14px] text-ground">Skip to the restart, lap {restartLap}</Text>
             </Pressable>
           ) : null}
         </View>
 
-        <View className="relative overflow-hidden rounded-card border border-line bg-[#0E0E11]" style={{ height: wide ? 'min(68vh, 720px)' : '58vh' } as object}>
+        <View className="relative overflow-hidden border border-line bg-ground" style={{ height: wide ? 'min(68vh, 720px)' : '58vh' } as object}>
           {mode === '3d' && webgl ? (
             <Suspense fallback={<ReplayLoading caption="Building the 3D view…" inline />}>
               <ReplayScene outline={data.outline} tracks={data.tracks} clock={clock} visible={visibleRef} highlighted={highlightRef} />
@@ -351,8 +380,8 @@ function ReplayStage({
           {incident ? <IncidentCaption incident={incident} /> : null}
           {ended && nextWindow ? (
             <View className="absolute inset-x-0 bottom-4 items-center">
-              <Pressable onPress={() => onSelectWindow(nextWindow)} className="rounded-full bg-red px-5 py-2.5 hover:bg-red-dark active:scale-95">
-                <Text className="font-body-bold text-[15px] text-white">Continue with {formatLapRange(nextWindow).toLowerCase()}</Text>
+              <Pressable onPress={() => onSelectWindow(nextWindow)} className="tm-slant bg-red px-7 py-2.5 hover:bg-red-dark active:scale-95">
+                <Text className="font-display text-[17px] uppercase tracking-[0.04em] text-white">Continue with {formatLapRange(nextWindow).toLowerCase()}</Text>
               </Pressable>
             </View>
           ) : null}
@@ -369,17 +398,21 @@ function ReplayStage({
           onSeek={seek}
           speed={speed}
           onSpeed={setSpeed}
+          markers={flagMarkers}
         />
         <Text className="font-body text-[13px] text-muted">Space to play or pause, ← and → to skip ten seconds, + and − to change speed.</Text>
       </View>
 
-      <Card className={`${wide ? 'w-[360px]' : 'w-full'} p-2`}>
-        <View className="flex-row items-center justify-between px-3 pb-2 pt-1">
-          <Text className="font-display text-[20px] text-white">Running order</Text>
-          <Text className="font-body text-[13px] text-muted">Gap to leader</Text>
+      <View className={`${wide ? 'w-[340px]' : 'w-full'} gap-4`}>
+        <View className="border border-line bg-surface p-2">
+          <View className="flex-row items-center justify-between px-2.5 pb-2 pt-1">
+            <Text className="font-display-semi text-[15px] tracking-[0.04em] text-muted">Running order</Text>
+            <Text className="font-display-semi text-[15px] tracking-[0.04em] text-muted">Gap, tyre</Text>
+          </View>
+          <Leaderboard rows={rows} retired={retired} gapsLoaded={intervals.isSuccess} highlighted={highlighted} onHighlight={setHighlighted} />
         </View>
-        <Leaderboard rows={rows} retired={retired} gapsLoaded={intervals.isSuccess} highlighted={highlighted} onHighlight={setHighlighted} />
-      </Card>
+        <RaceControlFeed messages={bundle.raceControl} at={at} />
+      </View>
     </View>
   );
 }
@@ -397,16 +430,16 @@ const readViewMode = (): ViewMode => {
 /** Flat map or 3D: the same replay, the same clock, two ways to look at it. */
 function ViewModeSwitch({ mode, onChange }: { mode: ViewMode; onChange: (mode: ViewMode) => void }) {
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Replay view" className="flex-row rounded-full border border-line p-0.5">
+    <View accessibilityRole="radiogroup" accessibilityLabel="Replay view" className="flex-row border border-line">
       {(['2d', '3d'] as const).map((m) => (
         <Pressable
           key={m}
           onPress={() => onChange(m)}
           accessibilityRole="radio"
           accessibilityState={{ checked: mode === m }}
-          className={`rounded-full px-3.5 py-1.5 transition-colors ${mode === m ? 'bg-white' : 'hover:bg-white/5'}`}
+          className={`px-4 py-1.5 transition-colors ${mode === m ? 'bg-paper' : 'hover:bg-lifted'}`}
         >
-          <Text className={`font-body-bold text-[13px] ${mode === m ? 'text-ground' : 'text-muted'}`}>{m === '2d' ? 'Map' : '3D'}</Text>
+          <Text className={`font-display text-[15px] uppercase ${mode === m ? 'text-ground' : 'text-muted'}`}>{m === '2d' ? 'Map' : '3D'}</Text>
         </Pressable>
       ))}
     </View>
@@ -414,20 +447,20 @@ function ViewModeSwitch({ mode, onChange }: { mode: ViewMode; onChange: (mode: V
 }
 
 function FlagLight({ flag }: { flag: TrackFlag }) {
-  const colour = { green: '#00C853', yellow: '#FFC400', red: '#E10600' }[flag];
+  const colour = { green: '#43B02A', yellow: '#FFC400', red: '#E10600' }[flag];
   const label = { green: 'Green flag', yellow: 'Yellow flag', red: 'Red flag' }[flag];
   return (
-    <View className="flex-row items-center gap-2" accessibilityLabel={label}>
-      <View className={`h-3 w-3 rounded-full ${flag === 'green' ? '' : 'tm-flash'}`} style={{ backgroundColor: colour, boxShadow: `0 0 10px ${colour}` } as object} />
-      <Text className="font-body-semi text-[14px] text-muted">{label}</Text>
+    <View className="flex-row items-center gap-2 border border-line px-3 py-1.5" accessibilityLabel={label}>
+      <View className={`h-2.5 w-2.5 ${flag === 'green' ? '' : 'tm-flash'}`} style={{ backgroundColor: colour }} />
+      <Text className="font-display text-[16px] text-paper">{label}</Text>
     </View>
   );
 }
 
 function Badge({ children, tone }: { children: string; tone: 'yellow' | 'muted' }) {
   return (
-    <View className={`rounded-badge px-2 py-0.5 ${tone === 'yellow' ? 'tm-flash bg-flag-yellow' : 'bg-lifted'}`}>
-      <Text className={`font-body-bold text-[13px] ${tone === 'yellow' ? 'text-black' : 'text-white'}`}>{children}</Text>
+    <View className={`px-2.5 py-1 ${tone === 'yellow' ? 'tm-flash bg-flag-yellow' : 'bg-lifted'}`}>
+      <Text className={`font-display text-[15px] uppercase ${tone === 'yellow' ? 'text-ground' : 'text-paper'}`}>{children}</Text>
     </View>
   );
 }
@@ -438,9 +471,9 @@ function Badge({ children, tone }: { children: string; tone: 'yellow' | 'muted' 
  */
 function IncidentCaption({ incident }: { incident: RaceIncident }) {
   return (
-    <View className="absolute bottom-4 left-4 max-w-[80%] flex-row items-center gap-3 rounded-inner border border-line bg-surface/95 px-4 py-2.5" accessibilityLiveRegion="polite">
-      <View className={`h-5 w-[3px] rounded-full ${incident.isRetirement ? 'bg-red' : 'bg-amber'}`} />
-      <Text className="font-body-bold text-[15px] text-white">{incident.text}</Text>
+    <View className="absolute bottom-4 left-4 max-w-[80%] flex-row items-center gap-3 border border-line bg-surface/95 px-4 py-2.5" accessibilityLiveRegion="polite">
+      <View className={`h-5 w-[3px] ${incident.isRetirement ? 'bg-red' : 'bg-amber'}`} />
+      <Text className="font-body-bold text-[15px] text-paper">{incident.text}</Text>
     </View>
   );
 }

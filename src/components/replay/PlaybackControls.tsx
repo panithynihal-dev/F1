@@ -20,6 +20,7 @@ export function PlaybackControls({
   onSeek,
   speed,
   onSpeed,
+  markers = [],
 }: {
   playing: boolean;
   onTogglePlay: () => void;
@@ -28,19 +29,21 @@ export function PlaybackControls({
   onSeek: (ms: number) => void;
   speed: Speed;
   onSpeed: (speed: Speed) => void;
+  /** Flag moments on the scrub bar (ms into the window), yellow or red. */
+  markers?: { ms: number; color: string; label: string }[];
 }) {
   return (
-    <View className="flex-row flex-wrap items-center gap-x-4 gap-y-3 rounded-card border border-line bg-surface px-3 py-3">
+    <View className="flex-row flex-wrap items-center gap-x-5 gap-y-3 border border-line bg-surface px-4 py-3 md:px-6">
       <Pressable
         onPress={onTogglePlay}
         accessibilityRole="button"
         accessibilityLabel={playing ? 'Pause' : 'Play'}
-        className="h-11 w-11 items-center justify-center rounded-full bg-red transition-transform hover:bg-red-dark active:scale-95"
+        className="h-11 w-11 items-center justify-center bg-red transition-transform hover:bg-red-dark active:scale-95"
       >
         {playing ? (
           <View className="flex-row gap-1">
-            <View className="h-4 w-1.5 rounded-sm bg-white" />
-            <View className="h-4 w-1.5 rounded-sm bg-white" />
+            <View className="h-4 w-1.5 bg-white" />
+            <View className="h-4 w-1.5 bg-white" />
           </View>
         ) : (
           <View
@@ -50,7 +53,16 @@ export function PlaybackControls({
       </Pressable>
 
       <View className="min-w-[200px] flex-1 flex-row items-center gap-3">
-        <Text className="w-12 text-right font-body-semi text-[14px] text-white tnum">{clock(elapsedMs)}</Text>
+        <Text className="w-12 text-right font-display text-[16px] text-paper tnum">{clock(elapsedMs)}</Text>
+        <View className="relative flex-1 justify-center">
+          {markers.map((m, i) => (
+            <View
+              key={i}
+              accessibilityLabel={m.label}
+              className="pointer-events-none absolute h-[18px] w-0.5"
+              style={{ left: `${(m.ms / Math.max(1, durationMs)) * 100}%`, backgroundColor: m.color, top: -6 }}
+            />
+          ))}
         <input
           type="range"
           aria-label="Replay position"
@@ -60,21 +72,22 @@ export function PlaybackControls({
           step={250}
           value={Math.min(elapsedMs, durationMs)}
           onChange={(event) => onSeek(Number(event.currentTarget.value))}
-          style={{ flex: 1, ['--progress' as string]: `${(Math.min(elapsedMs, durationMs) / Math.max(1, durationMs)) * 100}%` }}
+          style={{ width: '100%', ['--progress' as string]: `${(Math.min(elapsedMs, durationMs) / Math.max(1, durationMs)) * 100}%` }}
         />
+        </View>
         <Text className="w-12 font-body text-[14px] text-muted tnum">{clock(durationMs)}</Text>
       </View>
 
-      <View accessibilityRole="radiogroup" accessibilityLabel="Playback speed" className="flex-row rounded-full border border-line p-0.5">
+      <View accessibilityRole="radiogroup" accessibilityLabel="Playback speed" className="flex-row border border-line">
         {SPEEDS.map((s) => (
           <Pressable
             key={s}
             onPress={() => onSpeed(s)}
             accessibilityRole="radio"
             accessibilityState={{ checked: s === speed }}
-            className={`rounded-full px-2.5 py-1.5 transition-colors ${s === speed ? 'bg-lifted' : 'hover:bg-white/5'}`}
+            className={`px-3 py-1.5 transition-colors ${s === speed ? 'bg-paper' : 'hover:bg-lifted'}`}
           >
-            <Text className={`font-body-semi text-[13px] tnum ${s === speed ? 'text-white' : 'text-muted'}`}>{s}×</Text>
+            <Text className={`font-display text-[15px] tnum ${s === speed ? 'text-ground' : 'text-muted'}`}>{s}×</Text>
           </Pressable>
         ))}
       </View>
