@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { RankBadge } from './ui/RankBadge';
-import { teamBrand } from '@/domain/teamBrand';
+import { teamBrand } from '@/logic/teamBrand';
 
 /** The row every ranked list on the site shares: position, team chip, name and detail, a figure. */
 export function StandingRow({

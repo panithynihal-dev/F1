@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import type { FlowPalette } from '@/domain/helmets';
+import type { FlowPalette } from '@/logic/helmets';
 
 /**
  * A name filled with its owner's helmet (or team) colours that drift slowly through the letters.

@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { teamBrand } from '@/domain/teamBrand';
+import { teamBrand } from '@/logic/teamBrand';
 
 /**
  * A driver's race number set into a break in a stripe running down their team's livery — a piece

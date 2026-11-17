@@ -42,7 +42,7 @@ module.exports = {
         card: '0px',
       },
       maxWidth: {
-        page: '1200px',
+        page: '1440px',
       },
     },
   },

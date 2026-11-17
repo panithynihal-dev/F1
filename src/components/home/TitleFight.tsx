@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import type { DriverStanding } from '@/api/types';
 import { ChampionChip } from '@/components/ui/ChampionChip';
-import { teamBrand } from '@/domain/teamBrand';
+import { teamBrand } from '@/logic/teamBrand';
 
 /**
  * The drivers' standings as a timing tower: position, team stripe, name with a points bar measured

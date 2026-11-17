@@ -1,7 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 
-import { hexColor } from '@/domain/teamBrand';
-import { positionAt, type DriverTrack, type NormalizedPoint, type StartFinishLine } from '@/domain/trackBuilder';
+import { hexColor } from '@/logic/teamBrand';
+import { positionAt, type DriverTrack, type NormalizedPoint, type StartFinishLine } from '@/logic/trackBuilder';
 
 // OpenF1's y grows northward; the screen's grows downward. Flipped so circuits read the way their
 // maps do.

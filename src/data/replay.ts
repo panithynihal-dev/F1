@@ -1,8 +1,8 @@
 import type { Driver, Lap, PitStopEvent, RaceControlMessage, Session } from '@/api/types';
-import { lapEnd, lapStart, sessionEnd, sessionStart, toOpenF1Param } from '@/domain/dates';
-import { buildRaceIncidents, type RaceIncident } from '@/domain/raceIncidents';
-import { prepareLeaderboard, type LeaderboardSource } from '@/domain/leaderboard';
-import { requestedRange, type LapRange } from '@/domain/lapWindows';
+import { lapEnd, lapStart, sessionEnd, sessionStart, toOpenF1Param } from '@/logic/dates';
+import { buildRaceIncidents, type RaceIncident } from '@/logic/raceIncidents';
+import { prepareLeaderboard, type LeaderboardSource } from '@/logic/leaderboard';
+import { requestedRange, type LapRange } from '@/logic/lapWindows';
 import {
   buildDriverTracks,
   buildLapMarkers,
@@ -14,7 +14,7 @@ import {
   type LapMarker,
   type NormalizedPoint,
   type StartFinishLine,
-} from '@/domain/trackBuilder';
+} from '@/logic/trackBuilder';
 
 import {
   getCarLocations,

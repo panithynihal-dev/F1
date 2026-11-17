@@ -2,8 +2,8 @@ import { Text, View } from 'react-native';
 
 import type { RaceSchedule } from '@/api/types';
 import { SectionTitle } from '@/components/layout/Page';
-import { formatViewerTime, formatViewerWeekday, viewerTimeZoneName } from '@/domain/dates';
-import { weekendProgress } from '@/domain/weekend';
+import { formatViewerTime, formatViewerWeekday, viewerTimeZoneName } from '@/logic/dates';
+import { weekendProgress } from '@/logic/weekend';
 
 const startsIn = (ms: number) => {
   const minutes = Math.round(ms / 60_000);

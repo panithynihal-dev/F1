@@ -1,7 +1,7 @@
 import { jolpica } from '@/api/jolpica';
 import { openF1 } from '@/api/openf1';
-import type { ConstructorStanding, DriverStanding, Meeting, RaceResult, RaceSchedule, Session } from '@/api/types';
-import { meetingEnd, meetingStart, raceStart, sessionEnd, sessionStart, utcDay } from '@/domain/dates';
+import type { ConstructorStanding, DriverStanding, RaceResult, RaceSchedule, Session } from '@/api/types';
+import { raceStart, sessionEnd, sessionStart } from '@/logic/dates';
 
 import { cached, TTL } from './cache';
 import baked from './champions.json';
@@ -103,35 +103,7 @@ export const getQualifyingResults = (season: string, round: string) =>
     shouldPersist: (results) => results.length > 0,
   });
 
-/**
- * OpenF1 and Jolpica share no ID; the race day is the only reliable join. An empty list means the
- * race isn't classified yet — a normal state, not a failure.
- */
-export async function getRaceResultsForSession(session: Session): Promise<{ race: RaceSchedule | null; results: RaceResult[] }> {
-  const start = sessionStart(session);
-  if (start == null) return { race: null, results: [] };
-  const day = utcDay(start);
-  const race = (await getSchedule()).find((r) => r.date === day) ?? null;
-  if (!race) return { race: null, results: [] };
-  return { race, results: await getRaceResults(race.season, race.round) };
-}
-
 // ---- Sessions and meetings (OpenF1) ----
-
-/** The OpenF1 meeting covering a race day — the source of circuit artwork and the local UTC offset. */
-export const getMeetingForDate = (date: string) =>
-  cached(
-    `meeting_for_${date}`,
-    async (): Promise<Meeting | null> =>
-      (await getMeetings(Number(date.slice(0, 4)))).find((meeting) => {
-        const start = meetingStart(meeting);
-        if (start == null) return false;
-        const end = meetingEnd(meeting) ?? start;
-        // A meeting spans the weekend, so the race day falls inside it rather than equalling either end.
-        return utcDay(start) <= date && date <= utcDay(end);
-      }) ?? null,
-    { ttl: TTL.sessionTimeline },
-  );
 
 export const getMeetings = (year: number) => cached(`meetings_${year}`, () => openF1.meetings(year), { ttl: TTL.sessionTimeline });
 

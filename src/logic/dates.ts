@@ -1,4 +1,4 @@
-import type { Lap, Meeting, RaceControlMessage, RaceSchedule, Session } from '@/api/types';
+import type { Lap, Meeting, RaceControlMessage, Session } from '@/api/types';
 
 // Port of the app's util/DateUtils.kt. Instants are epoch milliseconds throughout; parsing happens
 // once per value, never inside a sort comparator (see TrackBuilder for why that matters).
@@ -29,31 +29,16 @@ export const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 /** OpenF1 query format: second precision, no zone. */
 export const toOpenF1Param = (ms: number) => new Date(ms).toISOString().slice(0, 19);
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const dayMonthFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const weekdayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
 
 /**
  * The race day in the viewer's timezone when the start time is known — "09:00 your time" beside the
  * UTC date would be a day out for half the world — and the published day otherwise.
  */
-export const formatRaceDate = (race: RaceSchedule) => {
-  if (race.time) {
-    const start = raceStart(race);
-    if (start != null) return new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(start);
-  }
-  const ms = parseInstant(`${race.date}T00:00:00Z`);
-  return ms == null ? race.date : dateFormat.format(ms);
-};
 export const formatDayMonth = (date: string) => {
   const ms = parseInstant(`${date}T00:00:00Z`);
   return ms == null ? date : dayMonthFormat.format(ms);
 };
-export const formatWeekday = (date: string) => {
-  const ms = parseInstant(`${date}T00:00:00Z`);
-  return ms == null ? '' : weekdayFormat.format(ms);
-};
-
 /** "15:00" in the viewer's own timezone — what someone planning their evening actually needs. */
 export const formatViewerTime = (ms: number) =>
   new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(ms);
@@ -64,22 +49,6 @@ export const formatViewerWeekday = (ms: number) => new Intl.DateTimeFormat(undef
 export const viewerTimeZoneName = () =>
   new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).formatToParts(Date.now()).find((p) => p.type === 'timeZoneName')
     ?.value ?? '';
-
-/**
- * "15:00" at the circuit. Jolpica publishes the start in UTC; the offset ("02:00:00", or
- * "-04:00:00") comes from OpenF1's meeting, so this needs both APIs and returns null if either half
- * is missing.
- */
-export const formatCircuitTime = (race: RaceSchedule, gmtOffset?: string | null) => {
-  if (!race.time || !gmtOffset) return null;
-  const start = raceStart(race);
-  const match = /^(-?)(\d{1,2}):(\d{2})/.exec(gmtOffset);
-  if (start == null || !match) return null;
-  const sign = match[1] ? -1 : 1;
-  const offsetMs = sign * (Number(match[2]) * 60 + Number(match[3])) * 60_000;
-  const local = new Date(start + offsetMs);
-  return `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}`;
-};
 
 /** OpenF1 lap durations arrive as seconds (96.96) — shown as "1:36.960". */
 export const formatLapTime = (seconds?: number | null) => {

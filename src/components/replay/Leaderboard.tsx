@@ -1,5 +1,5 @@
-import { formatGap, type LiveDriverRow } from '@/domain/leaderboard';
-import { hexColor, teamBrand } from '@/domain/teamBrand';
+import { formatGap, type LiveDriverRow } from '@/logic/leaderboard';
+import { hexColor, teamBrand } from '@/logic/teamBrand';
 
 const ROW = 36;
 

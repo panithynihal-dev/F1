@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import type { ConstructorStats, DriverStats, StatsScope, TitleRun } from '@/domain/stats';
-import { titleCount } from '@/domain/stats';
-import { teamBrand } from '@/domain/teamBrand';
+import type { ConstructorStats, DriverStats, StatsScope, TitleRun } from '@/logic/stats';
+import { titleCount } from '@/logic/stats';
+import { teamBrand } from '@/logic/teamBrand';
 
 import { DriverNumberTile } from '../ui/DriverNumberTile';
 import { LoadingCar } from '../ui/LoadingCar';

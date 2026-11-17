@@ -1,3 +1,4 @@
+// ESLint checks the code for mistakes (unused variables, broken hooks…). Run it with `npm run lint`.
 // https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');

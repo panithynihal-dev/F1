@@ -7,7 +7,7 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-na
 import { Page } from '@/components/layout/Page';
 import { RaceControlFeed } from '@/components/replay/RaceControlFeed';
 import { HelmetText } from '@/components/ui/HelmetText';
-import { paletteForCode } from '@/domain/helmets';
+import { paletteForCode } from '@/logic/helmets';
 import { Leaderboard } from '@/components/replay/Leaderboard';
 import { PlaybackControls, SPEEDS, type Speed } from '@/components/replay/PlaybackControls';
 import { TrackCanvas, type View as MapView } from '@/components/replay/TrackCanvas';
@@ -23,10 +23,10 @@ import {
   summarizeSafetyCarPeriods,
   trackFlagAt,
   type TrackFlag,
-} from '@/domain/dates';
-import { prepareLeaderboard, rowsAt } from '@/domain/leaderboard';
-import { formatLapRange, lapWindows, type LapRange } from '@/domain/lapWindows';
-import { INCIDENT_DISPLAY_MS, lapInProgressAt, type RaceIncident } from '@/domain/raceIncidents';
+} from '@/logic/dates';
+import { prepareLeaderboard, rowsAt } from '@/logic/leaderboard';
+import { formatLapRange, lapWindows, type LapRange } from '@/logic/lapWindows';
+import { INCIDENT_DISPLAY_MS, lapInProgressAt, type RaceIncident } from '@/logic/raceIncidents';
 import { hasWebGL } from '@/hooks/useReducedMotion';
 
 const DEFAULT_SPEED: Speed = 4;
@@ -74,25 +74,31 @@ export default function Replay() {
   }
 
   return (
-    <Page wide>
-      <Head>
-        <title>{`${title} replay · TrackiMetrix`}</title>
-      </Head>
-      <View className="mb-4 flex-row flex-wrap items-end justify-between gap-3">
-        <View className="min-w-0 max-w-full shrink gap-1.5">
-          <Link href={`/results/${sessionKey}`} asChild>
-            <Pressable>
-              <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red hover:underline">Results › {title}</Text>
-            </Pressable>
-          </Link>
-          <Text accessibilityRole="header" className="font-title text-[44px] uppercase leading-[42px] text-paper md:text-[64px] md:leading-[60px]">
-            {(meeting?.meeting_name ?? 'Race').replace('Grand Prix', 'GP')} replay
-          </Text>
+    <Page
+      wide
+      header={
+        <View className="gap-5">
+          <View className="flex-row flex-wrap items-end justify-between gap-3">
+            <View className="min-w-0 max-w-full shrink gap-1.5">
+              <Link href={`/results/${sessionKey}`} asChild>
+                <Pressable>
+                  <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red hover:underline">Results › {title}</Text>
+                </Pressable>
+              </Link>
+              <Text accessibilityRole="header" className="font-title text-[44px] uppercase leading-[42px] text-paper md:text-[64px] md:leading-[60px]">
+                {(meeting?.meeting_name ?? 'Race').replace('Grand Prix', 'GP')} replay
+              </Text>
         </View>
         <SafetyCarSummary bundle={bundle.data} />
       </View>
 
       <LapWindowChips bundle={bundle.data} current={lapWindow.data?.lapRange} requested={{ first: first || 1, last: last || 0 }} anchor={anchor} onSelect={selectWindow} />
+        </View>
+      }
+    >
+      <Head>
+        <title>{`${title} replay · TrackiMetrix`}</title>
+      </Head>
 
       {lapWindow.isPending ? (
         <ReplayLoading caption="Fetching car positions for these laps…" inline />
@@ -167,7 +173,7 @@ function LapWindowChips({
   const overlap = (w: LapRange) => Math.min(w.last, shown.last || w.last) - Math.max(w.first, shown.first);
   const selected = windows.reduce((best, w, i) => (best < 0 || overlap(w) > overlap(windows[best]) ? i : best), -1);
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerClassName="gap-1.5">
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5">
       {windows.map((w, i) => {
         const active = i === selected;
         return (

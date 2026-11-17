@@ -8,14 +8,14 @@ import { HeroCarousel, type HeroSlide } from '@/components/home/HeroCarousel';
 import { biggestClimb, Podium } from '@/components/home/Podium';
 import { fightForSecond, TitleFight } from '@/components/home/TitleFight';
 import { WeekendSchedule } from '@/components/home/WeekendSchedule';
-import { Page, SectionTitle } from '@/components/layout/Page';
+import { Band, Page, SectionTitle } from '@/components/layout/Page';
 import { SecondaryButton } from '@/components/ui/Buttons';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { actionPhoto, celebrationPhoto, circuitPhoto, teamPhoto } from '@/data/photos';
 import { getConstructorStandings, getDriverStandings, getLastRaceResults, getSchedule, nextRace, type LastRaceResults } from '@/data/repository';
-import { isClinched, maxPointsLeft, racesLeft } from '@/domain/clinch';
-import { formatViewerTime, formatViewerWeekday, raceStart, viewerTimeZoneName } from '@/domain/dates';
-import { driverPalette, teamPalette } from '@/domain/helmets';
+import { isClinched, maxPointsLeft, racesLeft } from '@/logic/clinch';
+import { formatViewerTime, formatViewerWeekday, raceStart, viewerTimeZoneName } from '@/logic/dates';
+import { driverPalette, teamPalette } from '@/logic/helmets';
 import { useNow } from '@/hooks/useNow';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -58,13 +58,17 @@ export default function Home() {
       </Head>
       <HeroCarousel slides={slides} />
 
-      <Page>
-        <View className="gap-16 md:gap-20">
-          {race && (raceStart(race) ?? 0) > now - 3 * 3_600_000 ? <WeekendSchedule race={race} now={now} /> : null}
+      {race && (raceStart(race) ?? 0) > now - 3 * 3_600_000 ? (
+        <Band tone="surface" className="py-12 md:py-14">
+          <WeekendSchedule race={race} now={now} />
+        </Band>
+      ) : null}
 
-          <View className="gap-14 lg:flex-row lg:gap-[72px]">
+      <Page>
+        <View>
+          <View className="gap-14 lg:flex-row lg:gap-[72px] 2xl:gap-24">
             {lastRace.data ? (
-              <View className="lg:w-[520px]">
+              <View className="lg:w-[520px] 2xl:w-[600px]">
                 <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {lastRace.data.round}</Text>}>{lastRace.data.raceName}</SectionTitle>
                 <Podium podium={lastRace.data.podium} results={lastRace.data.results} compact={phone} />
                 <View className="mt-6">

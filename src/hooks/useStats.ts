@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { buildConstructorStats, buildDriverCareerStats, buildDriverSeasonStats, type StatsScope } from '@/domain/stats';
+import { buildConstructorStats, buildDriverCareerStats, buildDriverSeasonStats, type StatsScope } from '@/logic/stats';
 
 import {
   getConstructorCareerRecord,
@@ -12,7 +12,7 @@ import {
   getDriverSeasonResults,
   getDriverSeasonSprints,
   getDriverTitles,
-} from './repository';
+} from '@/data/repository';
 
 // Ports of StandingsViewModel's detail loaders. A failed piece fails the card rather than reading
 // as zero — "Ferrari: 0 wins" would pass for fact — and because successes are cached while failures

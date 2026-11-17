@@ -4,7 +4,7 @@ import Head from 'expo-router/head';
 import { Text, useWindowDimensions, View } from 'react-native';
 
 import type { JolpicaDriver, RaceWithResults } from '@/api/types';
-import { Page, SectionTitle } from '@/components/layout/Page';
+import { Band, Page, SectionTitle } from '@/components/layout/Page';
 import { FinishCell, isClassified } from '@/components/stats/FinishCell';
 import { PointsChart } from '@/components/stats/PointsChart';
 import { parseScope, ScopeToggle } from '@/components/stats/ScopeToggle';
@@ -16,11 +16,11 @@ import { HelmetText } from '@/components/ui/HelmetText';
 import { EmptyState, ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { actionPhoto } from '@/data/photos';
 import { getDriverSeasonRaces, getDriverSeasonSprintRaces, getDriverStandings, getSchedule } from '@/data/repository';
-import { useDriverStats } from '@/data/useStats';
-import { isClinched, maxPointsLeft } from '@/domain/clinch';
-import { driverPalette } from '@/domain/helmets';
-import { driverSeasonNumbers, pointsByRound } from '@/domain/season';
-import { teamBrand } from '@/domain/teamBrand';
+import { useDriverStats } from '@/hooks/useStats';
+import { isClinched, maxPointsLeft } from '@/logic/clinch';
+import { driverPalette } from '@/logic/helmets';
+import { driverSeasonNumbers, pointsByRound } from '@/logic/season';
+import { teamBrand } from '@/logic/teamBrand';
 import { useNow } from '@/hooks/useNow';
 
 export default function DriverPage() {
@@ -107,7 +107,7 @@ export default function DriverPage() {
         >
           {driver.permanentNumber ?? ''}
         </div>
-        <View className="mx-auto w-full max-w-page px-4 pb-7 md:px-8 md:pb-14" style={{ minHeight: wide ? 560 : 520, justifyContent: 'flex-end' }}>
+        <View className="mx-auto w-full max-w-page px-4 pb-7 md:px-8 md:pb-14 xl:px-12 2xl:px-16" style={{ minHeight: wide ? 560 : 520, justifyContent: 'flex-end' }}>
           <View className="flex-row flex-wrap items-center gap-2.5">
             {champion ? <ChampionChip label={`${season} World Champion`} /> : standing ? (
               <View className="tm-slant bg-red px-3 py-0.5">
@@ -134,14 +134,15 @@ export default function DriverPage() {
         </View>
       </CreditedImage>
 
+      {races.data?.length ? (
+        <Band tone="surface" className="py-12 md:py-14">
+          <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Every Grand Prix, round 1 to {races.data.at(-1)?.round}</Text>}>Form guide</SectionTitle>
+          <FormGuide races={races.data} driverId={driver.driverId} size={wide ? 50 : 30} />
+        </Band>
+      ) : null}
+
       <Page>
         <View className="gap-14 md:gap-16">
-          {races.data?.length ? (
-            <View>
-              <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Every Grand Prix, round 1 to {races.data.at(-1)?.round}</Text>}>Form guide</SectionTitle>
-              <FormGuide races={races.data} driverId={driver.driverId} size={wide ? 50 : 30} />
-            </View>
-          ) : null}
 
           {mine.length >= 2 ? (
             <View>

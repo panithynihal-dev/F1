@@ -6,8 +6,8 @@ import { SectionTitle } from '@/components/layout/Page';
 import { CreditedImage } from '@/components/ui/CreditedImage';
 import { HelmetText } from '@/components/ui/HelmetText';
 import { celebrationPhoto } from '@/data/photos';
-import { driverPalette } from '@/domain/helmets';
-import { teamBrand } from '@/domain/teamBrand';
+import { driverPalette } from '@/logic/helmets';
+import { teamBrand } from '@/logic/teamBrand';
 
 const MEDAL: Record<string, string> = { '1': '#F5C518', '2': '#C0C0C8', '3': '#CD7F32' };
 const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`;

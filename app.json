@@ -13,8 +13,8 @@
       "name": "TrackiMetrix",
       "shortName": "TrackiMetrix",
       "description": "F1 standings, results and race replays drawn from real car telemetry.",
-      "themeColor": "#0A0A0C",
-      "backgroundColor": "#0A0A0C"
+      "themeColor": "#0E1013",
+      "backgroundColor": "#0E1013"
     },
     "plugins": [
       "expo-router",

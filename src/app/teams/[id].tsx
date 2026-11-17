@@ -4,7 +4,7 @@ import Head from 'expo-router/head';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 
 import type { ConstructorStanding, DriverStanding, RaceWithResults } from '@/api/types';
-import { Page, SectionTitle } from '@/components/layout/Page';
+import { Band, Page, SectionTitle } from '@/components/layout/Page';
 import { FinishCell, isClassified } from '@/components/stats/FinishCell';
 import { PointsChart } from '@/components/stats/PointsChart';
 import { parseScope, ScopeToggle } from '@/components/stats/ScopeToggle';
@@ -23,11 +23,11 @@ import {
   getDriverStandings,
   getSchedule,
 } from '@/data/repository';
-import { useConstructorStats } from '@/data/useStats';
-import { isClinched, maxPointsLeft, racesLeft } from '@/domain/clinch';
-import { teamPalette } from '@/domain/helmets';
-import { isClassifiedResult, pointsByRound, teammateHeadToHead } from '@/domain/season';
-import { teamBrand } from '@/domain/teamBrand';
+import { useConstructorStats } from '@/hooks/useStats';
+import { isClinched, maxPointsLeft, racesLeft } from '@/logic/clinch';
+import { teamPalette } from '@/logic/helmets';
+import { isClassifiedResult, pointsByRound, teammateHeadToHead } from '@/logic/season';
+import { teamBrand } from '@/logic/teamBrand';
 import { useNow } from '@/hooks/useNow';
 
 export default function TeamPage() {
@@ -102,7 +102,7 @@ export default function TeamPage() {
 
       <CreditedImage photo={photo} scrim={wide ? 'left' : 'phone'} eager tint={color} className="border-b border-line">
         <View className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: color }} />
-        <View className="mx-auto w-full max-w-page px-4 pb-7 md:px-8 md:pb-14" style={{ minHeight: wide ? 560 : 540, justifyContent: 'flex-end' }}>
+        <View className="mx-auto w-full max-w-page px-4 pb-7 md:px-8 md:pb-14 xl:px-12 2xl:px-16" style={{ minHeight: wide ? 560 : 540, justifyContent: 'flex-end' }}>
           <View className="flex-row flex-wrap items-center gap-2.5">
             {champion ? (
               <ChampionChip label={`${season} Constructors’ Champions`} />
@@ -134,20 +134,23 @@ export default function TeamPage() {
         </View>
       </CreditedImage>
 
+      <Band tone="surface" className="py-12 md:py-14">
+        <View className="gap-14 md:flex-row md:gap-16">
+          {lineup.length === 2 && races.data ? (
+            <View className="md:w-[560px]">
+              <TeammateBattle a={lineup[0]} b={lineup[1]} races={races.data} qualifying={qualifying.data ?? []} color={color} rounds={races.data.length} />
+            </View>
+          ) : null}
+          {standings.data ? (
+            <View className="md:flex-1">
+              <ConstructorsMini standings={standings.data} current={constructor.constructorId} />
+            </View>
+          ) : null}
+        </View>
+      </Band>
+
       <Page>
         <View className="gap-14 md:gap-16">
-          <View className="gap-14 md:flex-row md:gap-16">
-            {lineup.length === 2 && races.data ? (
-              <View className="md:w-[560px]">
-                <TeammateBattle a={lineup[0]} b={lineup[1]} races={races.data} qualifying={qualifying.data ?? []} color={color} rounds={races.data.length} />
-              </View>
-            ) : null}
-            {standings.data ? (
-              <View className="md:flex-1">
-                <ConstructorsMini standings={standings.data} current={constructor.constructorId} />
-              </View>
-            ) : null}
-          </View>
 
           {races.data?.length && lineup.length ? (
             <View>

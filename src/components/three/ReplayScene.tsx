@@ -5,8 +5,8 @@ import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { hexColor } from '@/domain/teamBrand';
-import { positionAt, type DriverTrack, type NormalizedPoint } from '@/domain/trackBuilder';
+import { hexColor } from '@/logic/teamBrand';
+import { positionAt, type DriverTrack, type NormalizedPoint } from '@/logic/trackBuilder';
 
 // Same reasoning as the home hero: true-scale gradients disappear, tripled they read as hills.
 const ELEVATION_SCALE = 3;

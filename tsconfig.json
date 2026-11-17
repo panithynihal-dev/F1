@@ -1,3 +1,5 @@
+// TypeScript settings. `strict` catches mistakes early; the "@/..." path lets any file import from
+// src/ without long ../../.. chains (e.g. `import { Page } from '@/components/layout/Page'`).
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {

@@ -12,7 +12,7 @@ import { PrimaryButton } from '@/components/ui/Buttons';
 import { EmptyState, ErrorState, errorMessage, PageLoading, SkeletonRows } from '@/components/ui/States';
 import { getMeetings, getSeasonSessionTimeline, getSession } from '@/data/repository';
 import { getSessionContent, type DriverLapSummary } from '@/data/sessionContent';
-import { formatLapTime, formatViewerTime, sessionStart } from '@/domain/dates';
+import { formatLapTime, formatViewerTime, sessionStart } from '@/logic/dates';
 
 export default function SessionResults() {
   const { sessionKey } = useLocalSearchParams<{ sessionKey: string }>();
@@ -59,49 +59,50 @@ export default function SessionResults() {
   const meetingName = meeting?.meeting_name ?? session.country_name ?? '';
   const start = sessionStart(session);
   return (
-    <Page>
+    <Page
+      header={
+        <View className="gap-6">
+          <View className="flex-row flex-wrap items-end justify-between gap-4">
+            <View className="min-w-0 max-w-full shrink gap-1.5">
+              <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red">
+                {[session.session_name, session.circuit_short_name, start ? new Date(start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : null, start ? formatViewerTime(start) : null]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+              <Text accessibilityRole="header" className="font-title text-[52px] uppercase leading-[48px] text-paper md:text-[88px] md:leading-[81px]">
+                {meeting?.meeting_name ?? meetingName}
+              </Text>
+            </View>
+            <View className="flex-row gap-2">
+              {session.session_type === 'Race' ? <PrimaryButton href={`/replay/${session.session_key}`}>Watch the replay</PrimaryButton> : null}
+            </View>
+          </View>
+
+          <View className="flex-row items-center gap-2">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1" contentContainerClassName="gap-1.5">
+              {weekend.map((s) => {
+                const active = s.session_key === key;
+                return (
+                  <Link key={s.session_key} href={`/results/${s.session_key}`} replace asChild>
+                    <Pressable
+                      accessibilityState={{ selected: active }}
+                      className={`border px-3.5 py-2.5 transition-colors md:px-5 ${active ? 'border-paper bg-paper' : 'border-line hover:border-muted'}`}
+                    >
+                      <Text className={`font-display text-[15px] uppercase tracking-[0.04em] md:text-[17px] ${active ? 'text-ground' : 'text-muted'}`}>{s.session_name}</Text>
+                    </Pressable>
+                  </Link>
+                );
+              })}
+            </ScrollView>
+            <StepButton session={previous} direction="previous" />
+            <StepButton session={next} direction="next" />
+          </View>
+        </View>
+      }
+    >
       <Head>
         <title>{`${meetingName} ${session.session_name} · TrackiMetrix`}</title>
       </Head>
-
-      <View className="mb-6 gap-5 md:mb-8">
-        <View className="flex-row flex-wrap items-end justify-between gap-4">
-          <View className="min-w-0 max-w-full shrink gap-1.5">
-            <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red">
-              {[session.session_name, session.circuit_short_name, start ? new Date(start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : null, start ? formatViewerTime(start) : null]
-                .filter(Boolean)
-                .join(', ')}
-            </Text>
-            <Text accessibilityRole="header" className="font-title text-[52px] uppercase leading-[48px] text-paper md:text-[88px] md:leading-[81px]">
-              {meeting?.meeting_name ?? meetingName}
-            </Text>
-          </View>
-          <View className="flex-row gap-2">
-            {session.session_type === 'Race' ? <PrimaryButton href={`/replay/${session.session_key}`}>Watch the replay</PrimaryButton> : null}
-          </View>
-        </View>
-
-        <View className="flex-row items-center gap-2">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1" contentContainerClassName="gap-1.5">
-            {weekend.map((s) => {
-              const active = s.session_key === key;
-              return (
-                <Link key={s.session_key} href={`/results/${s.session_key}`} replace asChild>
-                  <Pressable
-                    accessibilityState={{ selected: active }}
-                    className={`border px-3.5 py-2.5 transition-colors md:px-5 ${active ? 'border-paper bg-paper' : 'border-line hover:border-muted'}`}
-                  >
-                    <Text className={`font-display text-[15px] uppercase tracking-[0.04em] md:text-[17px] ${active ? 'text-ground' : 'text-muted'}`}>{s.session_name}</Text>
-                  </Pressable>
-                </Link>
-              );
-            })}
-          </ScrollView>
-          <StepButton session={previous} direction="previous" />
-          <StepButton session={next} direction="next" />
-        </View>
-      </View>
-
       <SessionBody session={session} />
     </Page>
   );

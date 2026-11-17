@@ -4,14 +4,14 @@ import Head from 'expo-router/head';
 import { Pressable, Text, View } from 'react-native';
 
 import type { RaceSchedule } from '@/api/types';
-import { Page, PageTitle, SectionTitle } from '@/components/layout/Page';
+import { Band, Page, PageTitle, SectionTitle } from '@/components/layout/Page';
 import { CreditedImage, PhotoCredit } from '@/components/ui/CreditedImage';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { circuitPhoto } from '@/data/photos';
 import { getSchedule, getSeasonSessionTimeline, getSeasonWinners, nextRace, type RoundWinner } from '@/data/repository';
-import { formatDayMonth, formatViewerTime, formatViewerWeekday, raceStart, sessionStart, utcDay, viewerTimeZoneName } from '@/domain/dates';
-import { teamBrand } from '@/domain/teamBrand';
-import { isSprintWeekend, weekendSessions } from '@/domain/weekend';
+import { formatDayMonth, formatViewerTime, formatViewerWeekday, raceStart, sessionStart, utcDay, viewerTimeZoneName } from '@/logic/dates';
+import { teamBrand } from '@/logic/teamBrand';
+import { isSprintWeekend, weekendSessions } from '@/logic/weekend';
 import { useNow } from '@/hooks/useNow';
 
 export default function Calendar() {
@@ -41,57 +41,64 @@ export default function Calendar() {
   const [featured, ...later] = upcoming;
 
   return (
-    <Page>
-      <Head>
-        <title>Calendar · TrackiMetrix</title>
-      </Head>
-      <PageTitle
-        title="Calendar"
-        kicker={`${races[0]?.season ?? ''} season. ${finished.length} of ${races.length} rounds run. Times are in your timezone (${viewerTimeZoneName()}).`}
-      />
-      <SeasonStrip races={races} next={next} now={now} winners={winnerByRound} />
+    <>
+      <Page
+        header={
+          <View className="gap-7">
+            <PageTitle
+              title="Calendar"
+              kicker={`${races[0]?.season ?? ''} season. ${finished.length} of ${races.length} rounds run. Times are in your timezone (${viewerTimeZoneName()}).`}
+            />
+            <SeasonStrip races={races} next={next} now={now} winners={winnerByRound} />
+          </View>
+        }
+      >
+        <Head>
+          <title>Calendar · TrackiMetrix</title>
+        </Head>
 
-      {featured ? (
-        <View className="mt-14 md:mt-[72px]">
-          <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>}>Still to come</SectionTitle>
-          <View className="gap-3 lg:flex-row">
-            <View className="lg:flex-[2]">
-              <FeaturedRound race={featured} now={now} />
-            </View>
-            {later.length ? (
-              <View className="gap-3 lg:flex-1">
-                {later.map((race) => (
-                  <UpcomingCard key={race.round} race={race} />
-                ))}
+        {featured ? (
+          <View>
+            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>}>Still to come</SectionTitle>
+            <View className="gap-3 lg:flex-row">
+              <View className="lg:flex-[2]">
+                <FeaturedRound race={featured} now={now} />
               </View>
-            ) : null}
+              {later.length ? (
+                <View className="gap-3 lg:flex-1">
+                  {later.map((race) => (
+                    <UpcomingCard key={race.round} race={race} />
+                  ))}
+                </View>
+              ) : null}
+            </View>
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </Page>
 
-      {finished.length ? (
-        <View className="mt-14 md:mt-[72px]">
-          <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Newest first</Text>}>Already run</SectionTitle>
-          <View className="hidden flex-row gap-5 border-b border-strong px-4 pb-2.5 md:flex">
-            {[
-              ['Rd', 'w-8'],
-              ['Race day', 'w-[120px]'],
-              ['Grand Prix', 'flex-1'],
-              ['Winner', 'w-[224px] pl-4'],
-              ['Team', 'w-[140px]'],
-              ['', 'w-[90px]'],
-            ].map(([label, w]) => (
-              <Text key={label || 'link'} className={`font-display-semi text-[15px] tracking-[0.04em] text-muted ${w}`}>
-                {label}
-              </Text>
+        {finished.length ? (
+          <Band tone="surface" className="pb-14 pt-12 md:pb-16 md:pt-14">
+            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Newest first</Text>}>Already run</SectionTitle>
+            <View className="hidden flex-row gap-5 border-b border-strong px-4 pb-2.5 md:flex">
+              {[
+                ['Rd', 'w-8'],
+                ['Race day', 'w-[120px]'],
+                ['Grand Prix', 'flex-1'],
+                ['Winner', 'w-[224px] pl-4'],
+                ['Team', 'w-[140px]'],
+                ['', 'w-[90px]'],
+              ].map(([label, w]) => (
+                <Text key={label || 'link'} className={`font-display-semi text-[15px] tracking-[0.04em] text-muted ${w}`}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+            {[...finished].reverse().map((race) => (
+              <FinishedRow key={race.round} race={race} winner={winnerByRound.get(race.round)} sessionKey={raceSessionByDay.get(race.date)} />
             ))}
-          </View>
-          {[...finished].reverse().map((race) => (
-            <FinishedRow key={race.round} race={race} winner={winnerByRound.get(race.round)} sessionKey={raceSessionByDay.get(race.date)} />
-          ))}
-        </View>
-      ) : null}
-    </Page>
+          </Band>
+        ) : null}
+    </>
   );
 }
 

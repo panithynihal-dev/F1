@@ -1,7 +1,7 @@
 import { jolpica } from '@/api/jolpica';
 import { isLiveRestricted } from '@/api/http';
 import type { Driver, Lap, QualifyingResult, RaceResult, RaceSchedule, Session } from '@/api/types';
-import { meetingEnd, meetingStart, utcDay } from '@/domain/dates';
+import { meetingEnd, meetingStart, utcDay } from '@/logic/dates';
 
 import { cached, TTL } from './cache';
 import { getDrivers, getLaps, getMeetings, getRaceResults, getQualifyingResults, getSchedule, isSessionFinished } from './repository';

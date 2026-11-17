@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 
-import type { StatsScope } from '@/domain/stats';
+import type { StatsScope } from '@/logic/stats';
 
 import { SegmentedTabs } from '../ui/SegmentedTabs';
 

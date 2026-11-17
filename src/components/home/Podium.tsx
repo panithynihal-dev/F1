@@ -3,8 +3,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import type { RaceResult } from '@/api/types';
 import { HelmetText } from '@/components/ui/HelmetText';
-import { driverPalette } from '@/domain/helmets';
-import { teamBrand } from '@/domain/teamBrand';
+import { driverPalette } from '@/logic/helmets';
+import { teamBrand } from '@/logic/teamBrand';
 
 const MEDAL: Record<string, string> = { '1': '#F5C518', '2': '#C0C0C8', '3': '#CD7F32' };
 const STEP: Record<string, number> = { '1': 150, '2': 108, '3': 78 };

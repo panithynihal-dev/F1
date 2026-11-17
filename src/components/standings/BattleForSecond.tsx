@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import type { DriverStanding } from '@/api/types';
-import { teamBrand } from '@/domain/teamBrand';
+import { teamBrand } from '@/logic/teamBrand';
 
 /**
  * Who can still finish second once the title is gone (or who can still catch the leader before it

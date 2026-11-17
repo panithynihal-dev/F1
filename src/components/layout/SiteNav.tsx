@@ -10,7 +10,7 @@ import { Link, usePathname, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { getSchedule, nextRace } from '@/data/repository';
-import { raceStart } from '@/domain/dates';
+import { raceStart } from '@/logic/dates';
 import { useNow } from '@/hooks/useNow';
 
 const logo = Asset.fromModule(require('../../../assets/brand/logo_mark.png')).uri;
@@ -45,7 +45,7 @@ export function SiteNav() {
   return (
     <>
       <View className="z-20 border-b border-line bg-ground">
-        <View className="mx-auto h-14 w-full max-w-page flex-row items-center justify-between px-4 md:h-16 md:px-8">
+        <View className="mx-auto h-14 w-full max-w-page flex-row items-center justify-between px-4 md:h-16 md:px-8 xl:px-12 2xl:px-16">
           <Link href="/" asChild>
             <Pressable className="flex-row items-center gap-2.5" accessibilityLabel="TrackiMetrix home">
               <img src={logo} alt="" width={28} height={28} />

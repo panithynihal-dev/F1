@@ -8,7 +8,7 @@ import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
 import { CreditedImage } from '@/components/ui/CreditedImage';
 import { HelmetText } from '@/components/ui/HelmetText';
 import type { Photo } from '@/data/photos';
-import type { FlowPalette } from '@/domain/helmets';
+import type { FlowPalette } from '@/logic/helmets';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export interface HeroSlide {
@@ -89,7 +89,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
       {/* Progress: one bar per slide, the current one filling over its time on screen. */}
       <View className="absolute inset-x-4 bottom-7 flex-row items-end gap-2 md:inset-x-0 md:bottom-9">
-        <View className="mx-auto w-full max-w-page flex-row items-end gap-6 md:px-8">
+        <View className="mx-auto w-full max-w-page flex-row items-end gap-6 md:px-8 xl:px-12 2xl:px-16">
           <View className="flex-1 flex-row gap-1.5 md:gap-4">
             {slides.map((s, i) => (
               <Pressable key={s.key} onPress={() => go(i)} accessibilityRole="button" accessibilityLabel={`Show ${s.label}`} className="flex-1 pt-2">
@@ -137,7 +137,7 @@ function Slide({ slide: s, phone, eager }: { slide: HeroSlide; phone: boolean; e
   return (
     <CreditedImage photo={s.photo} scrim={phone ? 'phone' : 'left'} eager={eager} className="h-full" tint={s.palette?.accents[0]}>
       <View className="absolute inset-x-0 bottom-[110px] md:bottom-[120px]">
-        <View className="mx-auto w-full max-w-page px-4 md:px-8">
+        <View className="mx-auto w-full max-w-page px-4 md:px-8 xl:px-12 2xl:px-16">
           <View className={`tm-slant self-start px-[18px] py-1 ${s.gold ? 'bg-gold' : 'bg-red'}`}>
             <Text className={`font-display text-[17px] uppercase tracking-[0.04em] ${s.gold ? 'text-ground' : 'text-white'}`}>{s.kicker}</Text>
           </View>

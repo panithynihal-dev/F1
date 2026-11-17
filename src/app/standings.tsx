@@ -21,11 +21,11 @@ import { ChampionChip } from '@/components/ui/ChampionChip';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { ErrorState, errorMessage, SkeletonRows } from '@/components/ui/States';
 import { getConstructorStandings, getDriverStandings, getSchedule } from '@/data/repository';
-import { useConstructorStats, useDriverStats } from '@/data/useStats';
-import { isClinched, maxPointsLeft, type Championship } from '@/domain/clinch';
-import { raceStart } from '@/domain/dates';
-import type { StatsScope } from '@/domain/stats';
-import { teamBrand } from '@/domain/teamBrand';
+import { useConstructorStats, useDriverStats } from '@/hooks/useStats';
+import { isClinched, maxPointsLeft, type Championship } from '@/logic/clinch';
+import { raceStart } from '@/logic/dates';
+import type { StatsScope } from '@/logic/stats';
+import { teamBrand } from '@/logic/teamBrand';
 import { useNow } from '@/hooks/useNow';
 
 type Tab = 'drivers' | 'constructors';
@@ -62,25 +62,24 @@ export default function Standings() {
   const selectedId = params.id ?? (wide ? defaultId(tab, drivers.data, constructors.data) : undefined);
 
   return (
-    <Page>
-      <Head>
-        <title>Standings · TrackiMetrix</title>
-      </Head>
-      <PageTitle title="Standings" kicker={roundsRun != null && schedule.data ? `${season} season, after round ${roundsRun} of ${schedule.data.length}.` : `${season} season.`} />
-      {champions.length ? (
-        <View className="mb-7 gap-2.5 border border-gold/45 md:flex-row md:gap-0" style={{ backgroundImage: 'linear-gradient(90deg, rgba(245,197,24,.14), rgba(245,197,24,.02))' } as object}>
-          {champions.map((c, i) => (
-            <View key={c.name} className={`flex-row items-center gap-3.5 px-5 py-3.5 md:flex-1 md:py-[18px] ${i ? 'md:border-l md:border-gold/30' : ''}`}>
-              <ChampionChip />
-              <Text className="flex-1 font-body text-[16px] text-paper">
-                <Text className="font-body-bold">{c.name}</Text>
-                {c.rest}
-              </Text>
-            </View>
-          ))}
+    <Page
+      header={
+        <View className="gap-7">
+          <PageTitle title="Standings" kicker={roundsRun != null && schedule.data ? `${season} season, after round ${roundsRun} of ${schedule.data.length}.` : `${season} season.`} />
+          {champions.length ? (
+            <View className="gap-2.5 border border-gold/45 md:flex-row md:gap-0" style={{ backgroundImage: 'linear-gradient(90deg, rgba(245,197,24,.14), rgba(245,197,24,.02))' } as object}>
+              {champions.map((c, i) => (
+                <View key={c.name} className={`flex-row items-center gap-3.5 px-5 py-3.5 md:flex-1 md:py-[18px] ${i ? 'md:border-l md:border-gold/30' : ''}`}>
+                  <ChampionChip />
+                  <Text className="flex-1 font-body text-[16px] text-paper">
+                    <Text className="font-body-bold">{c.name}</Text>
+                    {c.rest}
+                  </Text>
+                </View>
+              ))}
         </View>
       ) : null}
-      <View className="mb-6 gap-2.5 md:flex-row md:items-center md:justify-between">
+      <View className="gap-2.5 md:flex-row md:items-center md:justify-between">
         <View className="md:w-[380px]">
           <SegmentedTabs
             label="Championship"
@@ -98,6 +97,12 @@ export default function Standings() {
         </View>
       </View>
 
+        </View>
+      }
+    >
+      <Head>
+        <title>Standings · TrackiMetrix</title>
+      </Head>
       {active.isError ? (
         <ErrorState title="The standings didn't load" detail={errorMessage(active.error)} onRetry={() => active.refetch()} />
       ) : (
@@ -149,12 +154,20 @@ export default function Standings() {
           ) : null}
 
           {wide ? (
-            <View className="sticky top-6 w-[400px] gap-4">
-              {tab === 'drivers' && drivers.data ? <BattleForSecond standings={drivers.data} pointsLeft={driversLeft} decided={driversDecided} /> : null}
-              {!selectedId ? null : tab === 'drivers' ? (
-                <DriverPanel standing={drivers.data?.find((s) => s.Driver.driverId === selectedId)} scope={scope} />
-              ) : (
-                <ConstructorDetail standing={constructors.data?.find((s) => s.Constructor.constructorId === selectedId)} scope={scope} />
+            <View className="sticky top-6 w-[400px] gap-4 2xl:w-[780px] 2xl:flex-row 2xl:items-start">
+              {tab === 'drivers' && drivers.data ? (
+                <View className="2xl:flex-1">
+                  <BattleForSecond standings={drivers.data} pointsLeft={driversLeft} decided={driversDecided} />
+                </View>
+              ) : null}
+              {!selectedId ? null : (
+                <View className="2xl:flex-1">
+                  {tab === 'drivers' ? (
+                    <DriverPanel standing={drivers.data?.find((s) => s.Driver.driverId === selectedId)} scope={scope} />
+                  ) : (
+                    <ConstructorDetail standing={constructors.data?.find((s) => s.Constructor.constructorId === selectedId)} scope={scope} />
+                  )}
+                </View>
               )}
             </View>
           ) : null}
