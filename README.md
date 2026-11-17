@@ -50,7 +50,7 @@ publishes to GitHub Pages; watch it in the repo's **Actions** tab.
 | Folder | What's inside |
 | --- | --- |
 | `assets/brand/` | The logo and the little loading-car drawing. |
-| `assets/photos/` | Free-licence photos (Wikimedia Commons) used on the pages. Credits live in `src/data/photos.ts`. |
+| `assets/photos/` | Free-licence photos (Wikimedia Commons) used on the pages. Credits are listed in `src/data/photos.ts` and, with each source page, in `assets/photos/CREDITS.md`. |
 | `scripts/` | `build-champions.mjs`: run once after each season ends to refresh the list of past champions. |
 | `.github/workflows/` | The automatic deploy to GitHub Pages. |
 
