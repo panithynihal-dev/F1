@@ -72,6 +72,8 @@ src/
                   layout/  (page frame, nav, footer)
                   ui/      (buttons, tabs, HelmetText, CreditedImage, loading states…)
                   three/   (the 3D replay view, loaded only on the replay page)
+                  fluid/   (the liquid helmet-colour effect on names: one WebGL fluid
+                            simulation for the whole page, loaded after the page is up)
   api/          Talks to OpenF1 and Jolpica: one function per kind of request, plus their types.
   data/         Fetches through the API with caching, and combines answers into what pages need.
                   photos.ts lists every photo and its credit.
@@ -90,7 +92,9 @@ out** is in `logic/`.
 - Replays load four laps at a time. Links can point at a moment:
   `/replay/<session>?laps=5-8&t=90` opens laps 5–8, ninety seconds in. Keyboard: space to play or
   pause, ← / → to skip ten seconds, + / − to change speed.
-- Champions' and winners' names use their helmet colours (`src/logic/helmets.ts`). Add a driver
-  there to give them a palette; anyone else gets their team colour.
+- Champions' and winners' names use their helmet colours (`src/logic/helmets.ts`), moving like
+  liquid and following the mouse (`src/components/fluid/`). Add a driver there to give them a
+  palette; anyone else gets their team colour. With reduced motion or no WebGL the names fall back
+  to a gentle CSS gradient.
 - To add a photo: save it as WebP in `assets/photos/` and add it, with its credit, to
   `src/data/photos.ts`. Only use free-licence photos and always keep the credit.

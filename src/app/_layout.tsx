@@ -9,6 +9,7 @@ import Head from 'expo-router/head';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { FluidField } from '@/components/fluid/FluidField';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteNav } from '@/components/layout/SiteNav';
 import { sweepExpired } from '@/data/cache';
@@ -46,6 +47,7 @@ export default function RootLayout() {
           </View>
           <SiteFooter />
         </ScrollView>
+        <FluidField />
       </View>
     </QueryClientProvider>
   );

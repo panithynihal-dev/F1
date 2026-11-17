@@ -143,7 +143,7 @@ function Slide({ slide: s, phone, eager }: { slide: HeroSlide; phone: boolean; e
           </View>
           <View className="mt-3.5">
             {s.palette ? (
-              <HelmetText palette={s.palette} size={titleSize} as="h2">
+              <HelmetText palette={s.palette} size={titleSize} as="h2" fluid>
                 {s.title.join('\n')}
               </HelmetText>
             ) : (
