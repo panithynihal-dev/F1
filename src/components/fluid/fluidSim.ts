@@ -4,8 +4,8 @@ import { fluid, fluidNames } from './registry';
 import { drawMask, layoutSignature, MAX_PALETTES } from './textMask';
 
 // One "stable fluids" simulation for the whole window (WebGL2), used to make the helmet-colour
-// names liquid: the dye swirls the helmet colours through the letters and the velocity bends the
-// letters themselves. The technique follows Pavel Dobryakov's WebGL Fluid Simulation (MIT,
+// names liquid: the dye swirls the helmet colours through the letters, while the letters themselves
+// stay crisp and still, exactly the font's shapes. The technique follows Pavel Dobryakov's WebGL Fluid Simulation (MIT,
 // github.com/PavelDoGreat/WebGL-Fluid-Simulation); this is a smaller rewrite for this site.
 //
 // Loaded lazily by FluidField. Throws if the browser can't run it, and the names then keep their
@@ -17,7 +17,6 @@ const PRESSURE_ITERATIONS = 18;
 const CURL = 22; // swirliness
 const VELOCITY_DISSIPATION = 0.25;
 const DYE_DISSIPATION = 0.22;
-const WARP = 0.028; // how far the letters bend with the flow
 const AMBIENT_EVERY_MS = 450;
 
 const VERTEX = `#version 300 es
@@ -103,10 +102,10 @@ const FADE = `${HEAD}
 uniform sampler2D uTexture; uniform float value;
 void main() { o = value * texture(uTexture, vUv); }`;
 
-// The look: letters sampled through the flow (so they bend), coloured by the name's palette mixed by
-// the dye, with a soft glow of the same colours hugging the edges.
+// The look: crisp letters (the mask, sampled in place), filled with the name's palette mixed by the
+// dye, so only the colour inside them moves.
 const DISPLAY = `${HEAD}
-uniform sampler2D uMask, uDye, uVelocity; uniform vec2 simTexel, maskTexel; uniform float warp;
+uniform sampler2D uMask, uDye;
 uniform vec3 uBase[${MAX_PALETTES}], uA[${MAX_PALETTES}], uB[${MAX_PALETTES}], uC[${MAX_PALETTES}];
 vec3 paint(int id, vec3 w) {
   // Sharpen the weights so the strongest helmet colour wins: clean liquid bands of pure helmet
@@ -120,26 +119,9 @@ vec3 paint(int id, vec3 w) {
 }
 int paletteId(vec2 m) { return clamp(int(floor(m.y / max(m.x, 0.004) * 255.0 / 20.0 + 0.5)), 0, ${MAX_PALETTES - 1}); }
 void main() {
-  vec2 offset = texture(uVelocity, vUv).xy * simTexel * warp;
-  float len = length(offset);
-  if (len > 0.012) offset *= 0.012 / len;
-  vec2 uv = vUv - offset;
-  vec2 m = texture(uMask, uv).rg;
-  vec3 w = clamp(texture(uDye, uv).rgb, 0.0, 2.0);
-
-  // A small ring of samples gives the glow and tells us whose palette a glow pixel belongs to.
-  vec2 g = vec2(0.0); float r = 6.0;
-  for (int i = 0; i < 8; i++) {
-    float a = float(i) * 0.785398;
-    g += texture(uMask, uv + vec2(cos(a), sin(a)) * maskTexel * r).rg;
-  }
-  g /= 8.0;
-  float halo = clamp(g.x * 1.4 - m.x, 0.0, 1.0) * clamp(w.r + w.g + w.b, 0.0, 1.0) * 0.55;
-
-  vec3 letter = paint(paletteId(m), w);
-  vec3 glow = paint(paletteId(g), w * 1.4);
-  float alpha = m.x + halo * (1.0 - m.x);
-  o = vec4(letter * m.x + glow * halo * (1.0 - m.x), alpha);
+  vec2 m = texture(uMask, vUv).rg;
+  vec3 w = clamp(texture(uDye, vUv).rgb, 0.0, 2.0);
+  o = vec4(paint(paletteId(m), w) * m.x, m.x);
 }`;
 
 interface Target {
@@ -245,11 +227,12 @@ export function startFluid(canvas: HTMLCanvasElement, onReady: () => void): () =
 
   let velocity!: Double, dye!: Double, pressure!: Double, divergence!: Target, curl!: Target;
   const resize = () => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(window.innerWidth * dpr);
     canvas.height = Math.round(window.innerHeight * dpr);
-    maskCanvas.width = window.innerWidth;
-    maskCanvas.height = window.innerHeight;
+    // Same resolution as the screen canvas, so letter edges stay sharp.
+    maskCanvas.width = canvas.width;
+    maskCanvas.height = canvas.height;
     const [sw, sh] = sizeFor(SIM_RES);
     const [dw, dh] = sizeFor(DYE_RES);
     velocity = double(sw, sh);
@@ -368,10 +351,6 @@ export function startFluid(canvas: HTMLCanvasElement, onReady: () => void): () =
     activate(P.display, velocity.read);
     bind(P.display.u.uMask, maskTex);
     bind(P.display.u.uDye, dye.read.tex);
-    bind(P.display.u.uVelocity, velocity.read.tex);
-    gl.uniform2f(P.display.u.simTexel, 1 / velocity.read.w, 1 / velocity.read.h);
-    gl.uniform2f(P.display.u.maskTexel, 1 / maskCanvas.width, 1 / maskCanvas.height);
-    gl.uniform1f(P.display.u.warp, WARP);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.clearColor(0, 0, 0, 0);

@@ -8,7 +8,7 @@ import type { FlowPalette } from '@/logic/helmets';
  *
  * By default the colours drift slowly through the letters (the `.tm-helmet` rule in global.css).
  * With `fluid` (used only by the Home hero) the shared fluid simulation in components/fluid paints
- * it instead: the colours swirl, the letters ripple, and the mouse stirs it. The real text stays in
+ * it instead: the colours swirl inside crisp, still letters and the mouse stirs them. The real text stays in
  * the page (transparent) for layout, selection and screen readers. If the simulation can't run
  * (reduced motion, no WebGL), a fluid name falls back to the CSS drift too.
  */
