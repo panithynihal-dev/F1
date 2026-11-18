@@ -7,7 +7,7 @@ import type { FlowPalette } from '@/logic/helmets';
  * A name in its owner's helmet (or team) colours, moving like liquid.
  *
  * By default the colours drift slowly through the letters (the `.tm-helmet` rule in global.css).
- * With `fluid` (used only by the Home hero) the shared fluid simulation in components/fluid paints
+ * With `fluid` (the Home hero and driver page headers) the shared fluid simulation in components/fluid paints
  * it instead: the colours swirl inside crisp, still letters and the mouse stirs them. The real text stays in
  * the page (transparent) for layout, selection and screen readers. If the simulation can't run
  * (reduced motion, no WebGL), a fluid name falls back to the CSS drift too.
@@ -27,7 +27,7 @@ export function HelmetText({
   lineHeight?: number;
   as?: 'span' | 'h1' | 'h2' | 'h3';
   className?: string;
-  /** Paint this name with the live fluid simulation (the Home hero only). */
+  /** Paint this name with the live fluid simulation (the Home hero and driver page headers). */
   fluid?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);

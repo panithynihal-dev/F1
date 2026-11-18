@@ -119,7 +119,7 @@ export default function DriverPage() {
             </Text>
           </View>
           <View className="mt-3.5">
-            <HelmetText palette={driverPalette(driver.driverId, team)} size={wide ? 112 : 60} as="h1">
+            <HelmetText palette={driverPalette(driver.driverId, team)} size={wide ? 112 : 60} as="h1" fluid>
               {`${driver.givenName}\n${driver.familyName}`}
             </HelmetText>
           </View>

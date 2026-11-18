@@ -1,9 +1,10 @@
 import { teamBrand } from './teamBrand';
 
 // Helmet flow palettes: a champion's or winner's name is filled with their own helmet colours,
-// and a constructor's with its team colours, instead of a generic gold. Colours come from each
-// driver's main 2026 helmet (one-off specials ignored). Near-black is lifted to graphite so the
-// text still reads on the dark page. Keyed by Jolpica driverId / constructorId.
+// and a constructor's with its team colours, instead of a generic gold. Each driver gets the three
+// colours used most on their main 2026 helmet (one-off specials ignored), so the swirl reads as
+// their helmet. Near-black is lifted to graphite so the text still reads on the dark page. Keyed by
+// Jolpica driverId / constructorId.
 
 export interface FlowPalette {
   /** The colour most of the letters sit in. */
@@ -12,43 +13,50 @@ export interface FlowPalette {
   accents: [string, string, string];
 }
 
-// base = most of the letters; accents = the two main helmet colours, then a small hint.
-const DRIVERS: Record<string, FlowPalette> = {
+type Helmet = [main: string, second: string, third: string];
+
+/** Three helmet colours, most-used first. The third swirl re-uses the main colour, so only these three show. */
+const fromHelmet = ([main, second, third]: Helmet): FlowPalette => ({ base: main, accents: [second, third, main] });
+
+const HELMETS: Record<string, Helmet> = {
   // Mercedes
-  antonelli: { base: '#F3F3F1', accents: ['#4FB3FF', '#E2283A', '#1FA65A'] }, // white, sky blue, Italian red
-  russell: { base: '#BFE4F7', accents: ['#3FA9E0', '#F3F3F1', '#4A4E5A'] }, // ice blue and black
+  antonelli: ['#F3F3F1', '#4FB3FF', '#E2283A'], // white, sky blue, Italian red
+  russell: ['#BFE4F7', '#3FA9E0', '#F3F3F1'], // ice blue, blue, white
   // Red Bull
-  max_verstappen: { base: '#2F5BEA', accents: ['#E2231A', '#FFB000', '#5C86FF'] }, // his dad's blue, red, orange
-  hadjar: { base: '#FFD21F', accents: ['#8A4DFF', '#4A4E5A', '#FFE766'] }, // Senna yellow, purple
+  max_verstappen: ['#2F5BEA', '#E2231A', '#FFB000'], // blue, red, orange
+  hadjar: ['#FFD21F', '#8A4DFF', '#F3F3F1'], // yellow, purple, white
   // Ferrari
-  hamilton: { base: '#FFE01A', accents: ['#E10600', '#8A4DFF', '#F3F3F1'] }, // neon yellow, Ferrari red, purple
-  leclerc: { base: '#F3F3F1', accents: ['#E2231A', '#8EC9F0', '#B30000'] }, // Monaco red and white, baby blue
+  hamilton: ['#E10600', '#FFE01A', '#F3F3F1'], // red, yellow, white
+  leclerc: ['#E2231A', '#F3F3F1', '#8EC9F0'], // red, white, light blue
   // McLaren
-  norris: { base: '#E4FF1A', accents: ['#FF8000', '#FFFFFF', '#FF9F2E'] }, // fluorescent yellow, papaya
-  piastri: { base: '#2F6FDB', accents: ['#E2231A', '#F5E11A', '#FF8000'] }, // blue, red, yellow
+  norris: ['#E4FF1A', '#FF8000', '#F3F3F1'], // fluorescent yellow, papaya, white
+  piastri: ['#2F6FDB', '#E2231A', '#F5E11A'], // blue, red, yellow
   // Racing Bulls
-  lawson: { base: '#F3F3F1', accents: ['#F06AA6', '#C9D1DA', '#6C98FF'] }, // white, pink, silver fern
-  arvid_lindblad: { base: '#F3F3F1', accents: ['#6C98FF', '#E2231A', '#C9D1DA'] }, // no published helmet: team colours
-  tsunoda: { base: '#F3F3F1', accents: ['#E2231A', '#FF8000', '#2F5BEA'] }, // white, red maple leaf, orange
+  lawson: ['#F3F3F1', '#F06AA6', '#C9D1DA'], // white, pink, silver
+  arvid_lindblad: ['#F3F3F1', '#6C98FF', '#E2231A'], // no published helmet: team colours
+  tsunoda: ['#F3F3F1', '#E2231A', '#FF8000'], // white, red, orange
   // Alpine
-  gasly: { base: '#5BB8F5', accents: ['#2F5BEA', '#F3F3F1', '#E2231A'] }, // light and block blue, French stripe
-  colapinto: { base: '#75AADB', accents: ['#F3F3F1', '#F6B40E', '#FF87BC'] }, // Argentine sky blue, white, sun
+  gasly: ['#5BB8F5', '#2F5BEA', '#F3F3F1'], // light blue, blue, white
+  colapinto: ['#75AADB', '#F3F3F1', '#F6B40E'], // Argentine sky blue, white, sun yellow
   // Haas
-  bearman: { base: '#2F5BEA', accents: ['#C6FF1A', '#F3F3F1', '#6C98FF'] }, // blue, neon
-  ocon: { base: '#E2231A', accents: ['#F3F3F1', '#2F5BEA', '#FF6B5E'] }, // all red, Eiffel Tower
+  bearman: ['#2F5BEA', '#C6FF1A', '#F3F3F1'], // blue, neon, white
+  ocon: ['#E2231A', '#F3F3F1', '#2F5BEA'], // red, white, blue
   // Audi
-  hulkenberg: { base: '#F3F3F1', accents: ['#C9D1DA', '#F05A28', '#E2231A'] }, // white, silver, orange-red
-  bortoleto: { base: '#1FA65A', accents: ['#FFD21F', '#2F5BEA', '#F3F3F1'] }, // Brazil green, yellow, blue
+  hulkenberg: ['#F3F3F1', '#C9D1DA', '#F05A28'], // white, silver, orange-red
+  bortoleto: ['#1FA65A', '#FFD21F', '#2F5BEA'], // Brazil green, yellow, blue
   // Aston Martin
-  alonso: { base: '#3A8DDE', accents: ['#E2231A', '#FFD21F', '#5CB8FF'] }, // Asturian blue, Spanish red and yellow
-  stroll: { base: '#A9B0BA', accents: ['#229971', '#4A4E5A', '#CEDC00'] }, // black lifted to grey, team green
+  alonso: ['#3A8DDE', '#E2231A', '#FFD21F'], // blue, red, yellow
+  stroll: ['#A9B0BA', '#229971', '#CEDC00'], // black lifted to grey, team green, lime
   // Williams
-  sainz: { base: '#E2231A', accents: ['#FFD21F', '#1868DB', '#F3F3F1'] }, // red and yellow, Williams blue
-  albon: { base: '#E8ECF0', accents: ['#AEB6C0', '#1868DB', '#FFFFFF'] }, // chrome white and silver
+  sainz: ['#E2231A', '#FFD21F', '#1868DB'], // red, yellow, Williams blue
+  albon: ['#E8ECF0', '#AEB6C0', '#1868DB'], // white, silver, blue
   // Cadillac
-  perez: { base: '#F3F3F1', accents: ['#3CE05A', '#E2231A', '#1FA65A'] }, // neon green, Mexican flag
-  bottas: { base: '#F3F3F1', accents: ['#2F6FDB', '#4A4E5A', '#C9D1DA'] }, // badger black and white, Finnish blue
+  perez: ['#F3F3F1', '#3CE05A', '#E2231A'], // white, neon green, red
+  bottas: ['#F3F3F1', '#2F6FDB', '#4A4E5A'], // white, blue, graphite
 };
+const DRIVERS: Record<string, FlowPalette> = Object.fromEntries(
+  Object.entries(HELMETS).map(([id, helmet]) => [id, fromHelmet(helmet)]),
+);
 
 // Team colours from the 2026 liveries, for constructor names.
 const TEAMS: Record<string, FlowPalette> = {
