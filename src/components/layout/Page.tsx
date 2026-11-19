@@ -102,7 +102,7 @@ export function SectionTitle({
       {script ? (
         // Bigger than the caps (the script's letters are small for their size), padded so the
         // swashes aren't clipped.
-        <Text accessibilityRole="header" className="-mr-3 pl-1 pr-3 pt-1 font-signature text-[50px] leading-[58px] text-paper md:text-[64px] md:leading-[72px]">
+        <Text accessibilityRole="header" className="-mr-3 pl-1 pr-3 pt-1 font-signature text-[34px] leading-[44px] text-paper md:text-[64px] md:leading-[72px]">
           {children}
         </Text>
       ) : (

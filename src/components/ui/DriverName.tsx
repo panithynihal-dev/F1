@@ -66,6 +66,7 @@ export function ScriptName({
   as = 'h2',
   fluid = false,
   still = false,
+  className = '',
 }: {
   text: string;
   palette: FlowPalette;
@@ -73,12 +74,14 @@ export function ScriptName({
   as?: 'h1' | 'h2' | 'h3' | 'span';
   fluid?: boolean;
   still?: boolean;
+  /** Extra classes for the text, e.g. text-center. */
+  className?: string;
 }) {
   const [width, setWidth] = useState(0);
   const size = width ? Math.min(maxSize, Math.floor(width / textEms(text, 'MrDafoe_400Regular'))) : maxSize;
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ opacity: width ? 1 : 0 }}>
-      <HelmetText palette={palette} size={size} lineHeight={1.1} font="signature" as={as} fluid={fluid} still={still}>
+      <HelmetText palette={palette} size={size} lineHeight={1.1} font="signature" as={as} fluid={fluid} still={still} className={className}>
         {text}
       </HelmetText>
     </View>

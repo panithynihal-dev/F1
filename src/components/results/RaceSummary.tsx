@@ -4,6 +4,7 @@ import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import type { RaceResult } from '@/api/types';
 import { SectionTitle } from '@/components/layout/Page';
 import { CreditedImage } from '@/components/ui/CreditedImage';
+import { DriverName } from '@/components/ui/DriverName';
 import { HelmetText } from '@/components/ui/HelmetText';
 import { celebrationPhoto } from '@/data/photos';
 import { driverPalette } from '@/logic/helmets';
@@ -54,9 +55,14 @@ export function PodiumBand({ results }: { results: RaceResult[] }) {
                     {r.position}
                   </Text>
                   <View className="min-w-0 flex-1">
-                    <HelmetText palette={driverPalette(r.Driver.driverId, r.Constructor.name)} size={wide ? 40 : 26}>
-                      {wide ? fullName(r) : r.Driver.familyName}
-                    </HelmetText>
+                    {/* Full name: script first name over wide surname. Surname alone (phone): script. */}
+                    {wide ? (
+                      <DriverName given={r.Driver.givenName} family={r.Driver.familyName} palette={driverPalette(r.Driver.driverId, r.Constructor.name)} maxSize={40} />
+                    ) : (
+                      <HelmetText palette={driverPalette(r.Driver.driverId, r.Constructor.name)} size={34} lineHeight={1.1} font="signature">
+                        {r.Driver.familyName}
+                      </HelmetText>
+                    )}
                     <Text className="mt-1.5 font-body text-[15px] text-muted">
                       {r.Constructor.name}, from {r.grid === '0' ? 'the pit lane' : ordinal(Number(r.grid))}
                     </Text>

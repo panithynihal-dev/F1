@@ -49,7 +49,8 @@ export function SiteNav() {
           <Link href="/" asChild>
             <Pressable className="flex-row items-center gap-2.5" accessibilityLabel="TrackiMetrix home">
               <img src={logo} alt="" width={28} height={28} />
-              <Text className="font-title text-[22px] uppercase text-paper md:text-[24px]">TrackiMetrix</Text>
+              {/* The F1-style brush script runs bigger than caps for the same height. */}
+              <Text className="pl-0.5 pr-2 font-signature text-[30px] leading-[36px] text-paper md:text-[34px] md:leading-[40px]">TrackiMetrix</Text>
             </Pressable>
           </Link>
           <View className="hidden h-full flex-row md:flex" accessibilityRole="navigation">
@@ -59,7 +60,7 @@ export function SiteNav() {
                 <Link key={label} href={href} asChild>
                   <Pressable accessibilityState={{ selected: active }} className="group h-full justify-center px-5">
                     <Text
-                      className={`font-display text-[18px] uppercase tracking-[0.06em] transition-colors ${active ? 'text-paper' : 'text-muted group-hover:text-paper'}`}
+                      className={`pr-1 font-signature text-[26px] leading-[32px] transition-colors ${active ? 'text-paper' : 'text-muted group-hover:text-paper'}`}
                     >
                       {label}
                     </Text>

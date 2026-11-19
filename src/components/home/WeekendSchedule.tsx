@@ -21,7 +21,7 @@ export function WeekendSchedule({ race, now }: { race: RaceSchedule; now: number
   const sessions = weekendProgress(race, now);
   return (
     <View>
-      <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Your time, {viewerTimeZoneName()}</Text>}>Race weekend</SectionTitle>
+      <SectionTitle script aside={<Text className="font-body text-[14px] text-muted">Your time, {viewerTimeZoneName()}</Text>}>Race weekend</SectionTitle>
       <View className="gap-2 md:flex-row">
         {sessions.map((s) => {
           const next = s.state === 'next';

@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import type { RaceResult } from '@/api/types';
-import { HelmetText } from '@/components/ui/HelmetText';
+import { ScriptName } from '@/components/ui/DriverName';
 import { driverPalette } from '@/logic/helmets';
 import { teamBrand } from '@/logic/teamBrand';
 
@@ -32,9 +32,10 @@ export function Podium({ podium, results, compact = false }: { podium: RaceResul
           <Link key={r.Driver.driverId} href={`/drivers/${r.Driver.driverId}`} asChild>
             <Pressable className="flex-1 justify-end gap-2.5" accessibilityLabel={`${r.position}: ${r.Driver.givenName} ${r.Driver.familyName}`}>
               <View className="items-center">
-                <HelmetText palette={driverPalette(r.Driver.driverId, r.Constructor.name)} size={compact ? 24 : 30} className="text-center">
-                  {r.Driver.familyName}
-                </HelmetText>
+                {/* Surname in script, shrunk to fit its step ("Verstappen" on a phone). */}
+                <View className="w-full">
+                  <ScriptName text={r.Driver.familyName} palette={driverPalette(r.Driver.driverId, r.Constructor.name)} maxSize={compact ? 34 : 44} as="span" className="text-center" />
+                </View>
                 <Text numberOfLines={1} className="mt-1 font-display text-[16px] text-muted tnum">
                   {r.Time?.time ?? r.status}
                 </Text>
