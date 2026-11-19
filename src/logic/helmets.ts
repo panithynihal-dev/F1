@@ -58,20 +58,30 @@ const DRIVERS: Record<string, FlowPalette> = Object.fromEntries(
   Object.entries(HELMETS).map(([id, helmet]) => [id, fromHelmet(helmet)]),
 );
 
-// Team colours from the 2026 liveries, for constructor names.
-const TEAMS: Record<string, FlowPalette> = {
-  mercedes: { base: '#C9D1DA', accents: ['#6E8FB5', '#EEF2F6', '#00D7B6'] },
-  ferrari: { base: '#ED1131', accents: ['#F3F3F1', '#FFD21F', '#FF5A5A'] },
-  red_bull: { base: '#4781D7', accents: ['#E2231A', '#FFD21F', '#2F4FA8'] },
-  mclaren: { base: '#FF8000', accents: ['#4A4E5A', '#2F9BFF', '#FFB066'] },
-  rb: { base: '#F3F3F1', accents: ['#6C98FF', '#E2231A', '#2F4FA8'] },
-  alpine: { base: '#00A1E8', accents: ['#FF87BC', '#F3F3F1', '#2F5BEA'] },
-  haas: { base: '#F3F3F1', accents: ['#E6002B', '#8E949D', '#4A4E5A'] },
-  audi: { base: '#C9D1DA', accents: ['#F50537', '#F3F3F1', '#4A4E5A'] },
-  williams: { base: '#1868DB', accents: ['#F3F3F1', '#00A3E0', '#5C86FF'] },
-  aston_martin: { base: '#229971', accents: ['#CEDC00', '#F3F3F1', '#1C7A5A'] },
-  cadillac: { base: '#E8ECF0', accents: ['#8E949D', '#4A4E5A', '#C9A44A'] },
+// Team colours: the three used most on each 2026 livery, most-used first, for constructor names.
+// Black and carbon are lifted to graphite so the letters still read on the dark page.
+const TEAM_COLOURS: Record<string, Helmet> = {
+  mercedes: ['#C9D1DA', '#00D7B6', '#F3F3F1'], // silver, Petronas teal, white
+  ferrari: ['#ED1131', '#F3F3F1', '#FFD21F'], // Ferrari red, white, yellow
+  red_bull: ['#4781D7', '#E2231A', '#FFD21F'], // blue, red, yellow
+  mclaren: ['#FF8000', '#6C727C', '#47C7FC'], // papaya, black lifted to graphite, sky blue
+  rb: ['#F3F3F1', '#6C98FF', '#E2231A'], // white, blue, red
+  alpine: ['#00A1E8', '#FF87BC', '#F3F3F1'], // blue, pink, white
+  haas: ['#F3F3F1', '#E6002B', '#8E949D'], // white, red, grey
+  audi: ['#C9D1DA', '#F50537', '#6C727C'], // titanium, Audi red, black lifted to graphite
+  williams: ['#1868DB', '#F3F3F1', '#00A3E0'], // Williams blue, white, light blue
+  aston_martin: ['#229971', '#CEDC00', '#F3F3F1'], // racing green, lime, white
+  cadillac: ['#E8ECF0', '#6C727C', '#C9A44A'], // white, black lifted to graphite, gold
 };
+/**
+ * Team names lean on their main livery colour (Ferrari mostly red). The letters sit in the main
+ * colour and it also carries most swirls: the pointer alternates the first two swirl colours and
+ * the ambient swirls use them 85% of the time, so main + second do the moving and the third is a hint.
+ */
+const fromLivery = ([main, second, third]: Helmet): FlowPalette => ({ base: main, accents: [main, second, third] });
+const TEAMS: Record<string, FlowPalette> = Object.fromEntries(
+  Object.entries(TEAM_COLOURS).map(([id, colours]) => [id, fromLivery(colours)]),
+);
 
 /** A fallback built from a team's colour, so anyone without a palette still gets a moving fill. */
 function fromTeamColour(teamName?: string | null): FlowPalette {

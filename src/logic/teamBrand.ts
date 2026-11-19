@@ -49,5 +49,25 @@ export function teamBrand(teamName?: string | null): TeamInfo {
   return { abbreviation: name.slice(0, 3).toUpperCase() || '?', color: '#808080', livery: unknownLivery };
 }
 
+/**
+ * Each team's full name for its team page title, in the classic form without title sponsors
+ * ("Scuderia Ferrari", not "Scuderia Ferrari HP"), so it doesn't change when sponsors do.
+ * Keyed by Jolpica constructorId; anyone missing keeps the name the data gives.
+ */
+const TEAM_FULL_NAMES: Record<string, string> = {
+  ferrari: 'Scuderia Ferrari',
+  mercedes: 'Mercedes-AMG F1 Team',
+  red_bull: 'Red Bull Racing',
+  mclaren: 'McLaren F1 Team',
+  rb: 'Racing Bulls',
+  alpine: 'Alpine F1 Team',
+  haas: 'Haas F1 Team',
+  audi: 'Audi F1 Team',
+  williams: 'Williams Racing',
+  aston_martin: 'Aston Martin F1 Team',
+  cadillac: 'Cadillac F1 Team',
+};
+export const teamFullName = (constructorId: string, fallback: string) => TEAM_FULL_NAMES[constructorId] ?? fallback;
+
 /** OpenF1's team_colour arrives without the hash ("E8002D"). */
 export const hexColor = (hex?: string | null) => (hex && /^[0-9a-f]{6}$/i.test(hex) ? `#${hex}` : null);

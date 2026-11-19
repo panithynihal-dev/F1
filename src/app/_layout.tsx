@@ -4,6 +4,7 @@ import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold
 import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold_Italic } from '@expo-google-fonts/barlow-condensed';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MrDafoe_400Regular } from '@expo-google-fonts/mr-dafoe';
+import { Unbounded_600SemiBold } from '@expo-google-fonts/unbounded/600SemiBold';
 import { Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded/800ExtraBold';
 import { useFonts } from 'expo-font';
 import { Slot } from 'expo-router';
@@ -31,6 +32,7 @@ export default function RootLayout() {
     Barlow_600SemiBold,
     Barlow_700Bold,
     MrDafoe_400Regular,
+    Unbounded_600SemiBold,
     Unbounded_800ExtraBold,
   });
 

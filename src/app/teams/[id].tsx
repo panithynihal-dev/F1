@@ -12,7 +12,7 @@ import { ConstructorStatsGrid, StatsError, StatsLoading } from '@/components/sta
 import { SecondaryButton } from '@/components/ui/Buttons';
 import { ChampionChip } from '@/components/ui/ChampionChip';
 import { CreditedImage } from '@/components/ui/CreditedImage';
-import { HelmetText } from '@/components/ui/HelmetText';
+import { ScriptName } from '@/components/ui/DriverName';
 import { EmptyState, ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { teamPhoto } from '@/data/photos';
 import {
@@ -27,7 +27,7 @@ import { useConstructorStats } from '@/hooks/useStats';
 import { isClinched, maxPointsLeft, racesLeft } from '@/logic/clinch';
 import { teamPalette } from '@/logic/helmets';
 import { isClassifiedResult, pointsByRound, teammateHeadToHead } from '@/logic/season';
-import { teamBrand } from '@/logic/teamBrand';
+import { teamBrand, teamFullName } from '@/logic/teamBrand';
 import { useNow } from '@/hooks/useNow';
 
 export default function TeamPage() {
@@ -114,9 +114,8 @@ export default function TeamPage() {
             <Text className="font-display-semi text-[15px] tracking-[0.04em] text-muted">{constructor.nationality}</Text>
           </View>
           <View className="mt-3.5">
-            <HelmetText palette={teamPalette(constructor.constructorId, constructor.name)} size={wide ? 128 : 72} as="h1">
-              {constructor.name}
-            </HelmetText>
+            {/* Team name in the F1-style script, team colours flowing inside, like the Home hero. */}
+            <ScriptName text={teamFullName(constructor.constructorId, constructor.name)} palette={teamPalette(constructor.constructorId, constructor.name)} maxSize={wide ? 150 : 84} as="h1" fluid />
           </View>
           {champion ? (
             <Text className="mt-2.5 max-w-[560px] font-body text-[15px] leading-[22px] text-muted md:text-[17px] md:leading-[25px]">

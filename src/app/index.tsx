@@ -92,7 +92,7 @@ export default function Home() {
           <View className="gap-14 lg:flex-row lg:gap-[72px] 2xl:gap-24">
             {shownLast ? (
               <View className="lg:w-[520px] 2xl:w-[600px]">
-                <SectionTitle script aside={<Text className="font-body text-[14px] text-muted">Round {shownLast.round}</Text>}>{shownLast.raceName}</SectionTitle>
+                <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {shownLast.round}</Text>}>{shownLast.raceName}</SectionTitle>
                 <Podium podium={shownLast.podium} results={shownLast.results} compact={phone} />
                 <View className="mt-6">
                   <SecondaryButton href="/results">Full result</SecondaryButton>
@@ -102,7 +102,7 @@ export default function Home() {
 
             {drivers.data?.length ? (
               <View className="lg:flex-1">
-                <SectionTitle script aside={afterRound ? <Text className="font-body text-[14px] text-muted">After round {afterRound}</Text> : undefined}>Drivers’ standings</SectionTitle>
+                <SectionTitle aside={afterRound ? <Text className="font-body text-[14px] text-muted">After round {afterRound}</Text> : undefined}>Drivers’ standings</SectionTitle>
                 <TitleFight standings={drivers.data} decided={decided} compact={phone} />
                 {second && pointsLeft > 0 ? <Text className="mt-[18px] font-body text-[15px] leading-[22px] text-[#C9CDD3]">{second}</Text> : null}
                 <View className="mt-6">

@@ -38,6 +38,8 @@ module.exports = {
         // Driver name lockup: the first name as a brush signature over a wide, heavy surname.
         signature: ['MrDafoe_400Regular'],
         wide: ['Unbounded_800ExtraBold'],
+        // Wide caps for page and section titles and the nav links, after F1's broadcast graphics.
+        heading: ['Unbounded_600SemiBold'],
       },
       borderRadius: {
         badge: '0px',

@@ -67,7 +67,7 @@ export default function Standings() {
     <Page
       header={
         <View className="gap-7">
-          <PageTitle script title="Standings"kicker={roundsRun != null && schedule.data ? `${season} season, after round ${roundsRun} of ${schedule.data.length}.` : `${season} season.`} />
+          <PageTitle title="Standings" kicker={roundsRun != null && schedule.data ? `${season} season, after round ${roundsRun} of ${schedule.data.length}.` : `${season} season.`} />
           {champions.length ? (
             <View className="gap-2.5 border border-gold/45 md:flex-row md:gap-0" style={{ backgroundImage: 'linear-gradient(90deg, rgba(245,197,24,.14), rgba(245,197,24,.02))' } as object}>
               {champions.map((c, i) => (

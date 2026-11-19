@@ -48,7 +48,6 @@ export default function Calendar() {
         header={
           <View className="gap-7">
             <PageTitle
-              script
               title="Calendar"
               kicker={`${races[0]?.season ?? ''} season. ${finished.length} of ${races.length} rounds run. Times are in your timezone (${viewerTimeZoneName()}).`}
             />
@@ -62,7 +61,7 @@ export default function Calendar() {
 
         {featured ? (
           <View>
-            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>} script>Still to come</SectionTitle>
+            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>}>Still to come</SectionTitle>
             <View className="gap-3 lg:flex-row">
               <View className="lg:flex-[2]">
                 <FeaturedRound race={featured} now={now} />

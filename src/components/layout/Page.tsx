@@ -48,37 +48,17 @@ export function Page({ children, header, wide = false, flush = false }: { childr
   );
 }
 
-/** A page's own heading. `kicker` is context the title alone can't carry (the season, the round). */
-export function PageTitle({
-  title,
-  kicker,
-  script = false,
-  children,
-}: {
-  title: string;
-  kicker?: string;
-  /** Write the title in the F1-style brush script (plain white, no motion) instead of caps. */
-  script?: boolean;
-  children?: ReactNode;
-}) {
+/**
+ * A page's own heading, in wide caps (Unbounded SemiBold, after F1's broadcast graphics). `kicker`
+ * is context the title alone can't carry (the season, the round).
+ */
+export function PageTitle({ title, kicker, children }: { title: string; kicker?: string; children?: ReactNode }) {
   return (
     <View className="flex-row flex-wrap items-end justify-between gap-4">
       <View className="min-w-0 max-w-full shrink gap-1">
-        {script ? (
-          // The script's letters are small for their size, so it runs bigger than the caps; the
-          // padding keeps the swashes from being clipped, and the capital's opening swash clear of
-          // the screen edge.
-          <Text
-            accessibilityRole="header"
-            className="-mr-3 pl-2 pr-3 pt-2 font-signature text-[76px] leading-[84px] text-paper md:text-[124px] md:leading-[132px]"
-          >
-            {title}
-          </Text>
-        ) : (
-          <Text accessibilityRole="header" className="font-title text-[56px] uppercase leading-[52px] text-paper md:text-[88px] md:leading-[81px]">
-            {title}
-          </Text>
-        )}
+        <Text accessibilityRole="header" className="font-heading text-[34px] uppercase leading-[42px] tracking-[0.04em] text-paper md:text-[56px] md:leading-[66px]">
+          {title}
+        </Text>
         {kicker ? <Text className="mt-2 font-body text-[15px] text-muted md:text-[17px]">{kicker}</Text> : null}
       </View>
       {children ? <View className="flex-row flex-wrap items-center gap-2">{children}</View> : null}
@@ -86,30 +66,13 @@ export function PageTitle({
   );
 }
 
-/** A section heading inside a page. */
-export function SectionTitle({
-  children,
-  aside,
-  script = false,
-}: {
-  children: string;
-  aside?: ReactNode;
-  /** Write the heading in the F1-style brush script (plain white, no motion) instead of caps. */
-  script?: boolean;
-}) {
+/** A section heading inside a page, in the same wide caps as page titles. */
+export function SectionTitle({ children, aside }: { children: string; aside?: ReactNode }) {
   return (
     <View className="mb-4 flex-row items-baseline justify-between gap-3">
-      {script ? (
-        // Bigger than the caps (the script's letters are small for their size), padded so the
-        // swashes aren't clipped.
-        <Text accessibilityRole="header" className="-mr-3 pl-1 pr-3 pt-1 font-signature text-[34px] leading-[44px] text-paper md:text-[64px] md:leading-[72px]">
-          {children}
-        </Text>
-      ) : (
-        <Text accessibilityRole="header" className="font-title text-[30px] uppercase text-paper md:text-[34px]">
-          {children}
-        </Text>
-      )}
+      <Text accessibilityRole="header" className="min-w-0 shrink font-heading text-[18px] uppercase leading-[26px] tracking-[0.04em] text-paper md:text-[24px] md:leading-[32px]">
+        {children}
+      </Text>
       {aside}
     </View>
   );

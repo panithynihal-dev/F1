@@ -78,7 +78,9 @@ export function ScriptName({
   className?: string;
 }) {
   const [width, setWidth] = useState(0);
-  const size = width ? Math.min(maxSize, Math.floor(width / textEms(text, 'MrDafoe_400Regular'))) : maxSize;
+  // The script style adds 0.2em per word gap and swash padding, so count those too.
+  const ems = textEms(text, 'MrDafoe_400Regular') + 0.2 * (text.split(' ').length - 1) + 0.35;
+  const size = width ? Math.min(maxSize, Math.floor(width / ems)) : maxSize;
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ opacity: width ? 1 : 0 }}>
       <HelmetText palette={palette} size={size} lineHeight={1.1} font="signature" as={as} fluid={fluid} still={still} className={className}>

@@ -60,7 +60,7 @@ export function SiteNav() {
                 <Link key={label} href={href} asChild>
                   <Pressable accessibilityState={{ selected: active }} className="group h-full justify-center px-5">
                     <Text
-                      className={`pr-1 font-signature text-[26px] leading-[32px] transition-colors ${active ? 'text-paper' : 'text-muted group-hover:text-paper'}`}
+                      className={`font-heading text-[14px] uppercase tracking-[0.08em] transition-colors ${active ? 'text-paper' : 'text-muted group-hover:text-paper'}`}
                     >
                       {label}
                     </Text>
@@ -96,7 +96,7 @@ export function SiteNav() {
               <Pressable accessibilityState={{ selected: active }} className="flex-1 items-center gap-1 pb-2 pt-1.5">
                 <View className={`mb-1 h-[3px] w-5 ${active ? 'bg-red' : 'bg-transparent'}`} />
                 <Glyph size={20} weight={active ? 'fill' : 'regular'} color={active ? '#F3F3F1' : '#8E949D'} />
-                <Text className={`font-display text-[12px] uppercase tracking-[0.05em] ${active ? 'text-paper' : 'text-muted'}`}>{label}</Text>
+                <Text className={`font-heading text-[9px] uppercase tracking-[0.06em] ${active ? 'text-paper' : 'text-muted'}`}>{label}</Text>
               </Pressable>
             </Link>
           );
