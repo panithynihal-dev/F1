@@ -66,17 +66,29 @@ export function drawMask(
 
     const style = getComputedStyle(n.el);
     ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    ctx.letterSpacing = style.letterSpacing === 'normal' ? '0px' : style.letterSpacing;
+    ctx.wordSpacing = style.wordSpacing === 'normal' ? '0px' : style.wordSpacing;
     const ascent = ctx.measureText('H').fontBoundingBoxAscent;
     ctx.fillStyle = `rgb(255, ${id * ID_STEP}, 0)`;
-
+    const upper = style.textTransform === 'uppercase';
     const text = (textNode as Text).data;
+    const shown = upper ? text.toUpperCase() : text;
+
+    // A name on one line is drawn in one go, which keeps a script font's joined-up letters and
+    // kerning. Names that wrap are drawn letter by letter, each where the browser put it.
+    range.selectNodeContents(textNode);
+    const lines = range.getClientRects();
+    if (lines.length === 1 && !text.includes('\n')) {
+      ctx.fillText(shown, lines[0].left, lines[0].top + ascent);
+      continue;
+    }
     for (let i = 0; i < text.length; i++) {
       if (text[i] === '\n' || text[i] === ' ') continue;
       range.setStart(textNode, i);
       range.setEnd(textNode, i + 1);
       const r = range.getBoundingClientRect();
       if (r.width === 0) continue;
-      ctx.fillText(text[i].toUpperCase(), r.left, r.top + ascent);
+      ctx.fillText(shown[i], r.left, r.top + ascent);
     }
   }
   ctx.restore();

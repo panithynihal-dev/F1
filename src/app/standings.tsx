@@ -18,12 +18,14 @@ import {
 } from '@/components/stats/StatPanels';
 import { SecondaryButton, TogglePill } from '@/components/ui/Buttons';
 import { ChampionChip } from '@/components/ui/ChampionChip';
+import { DriverName } from '@/components/ui/DriverName';
 import { SegmentedTabs } from '@/components/ui/SegmentedTabs';
 import { ErrorState, errorMessage, SkeletonRows } from '@/components/ui/States';
 import { getConstructorStandings, getDriverStandings, getSchedule } from '@/data/repository';
 import { useConstructorStats, useDriverStats } from '@/hooks/useStats';
 import { isClinched, maxPointsLeft, type Championship } from '@/logic/clinch';
 import { raceStart } from '@/logic/dates';
+import { driverPalette } from '@/logic/helmets';
 import type { StatsScope } from '@/logic/stats';
 import { teamBrand } from '@/logic/teamBrand';
 import { useNow } from '@/hooks/useNow';
@@ -201,9 +203,12 @@ function DriverPanel({ standing, scope }: { standing?: DriverStanding; scope: St
       <View className="flex-row gap-4">
         <DriverNumberTile teamName={team} number={standing.Driver.permanentNumber} width={96} height={112} />
         <View className="flex-1 justify-center gap-0.5">
-          <Text className="font-title text-[30px] uppercase leading-[28px] text-paper">
-            {standing.Driver.givenName} {standing.Driver.familyName}
-          </Text>
+          <DriverName
+            given={standing.Driver.givenName}
+            family={standing.Driver.familyName}
+            palette={driverPalette(standing.Driver.driverId, team)}
+            maxSize={34}
+          />
           <Text className="font-body text-[15px] text-muted">{standing.Constructors.map((c) => c.name).join(', ')}</Text>
           <Text className="font-body text-[15px] text-muted">{standing.Driver.nationality}</Text>
         </View>

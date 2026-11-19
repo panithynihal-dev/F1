@@ -12,7 +12,7 @@ import { DriverStatsGrid, StatsError, StatsLoading, TitleRuns } from '@/componen
 import { SecondaryButton } from '@/components/ui/Buttons';
 import { ChampionChip } from '@/components/ui/ChampionChip';
 import { CreditedImage } from '@/components/ui/CreditedImage';
-import { HelmetText } from '@/components/ui/HelmetText';
+import { DriverName } from '@/components/ui/DriverName';
 import { EmptyState, ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { actionPhoto } from '@/data/photos';
 import { getDriverSeasonRaces, getDriverSeasonSprintRaces, getDriverStandings, getSchedule } from '@/data/repository';
@@ -119,9 +119,14 @@ export default function DriverPage() {
             </Text>
           </View>
           <View className="mt-3.5">
-            <HelmetText palette={driverPalette(driver.driverId, team)} size={wide ? 112 : 60} as="h1" fluid>
-              {`${driver.givenName}\n${driver.familyName}`}
-            </HelmetText>
+            <DriverName
+              given={driver.givenName}
+              family={driver.familyName}
+              palette={driverPalette(driver.driverId, team)}
+              maxSize={wide ? 112 : 56}
+              as="h1"
+              fluid
+            />
           </View>
           <View className="mt-6 flex-row flex-wrap gap-x-[22px] gap-y-3 md:gap-x-11">
             {(wide ? headline : headline.slice(0, 3)).map((s) => (

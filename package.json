@@ -5,6 +5,8 @@
   "dependencies": {
     "@expo-google-fonts/barlow": "^0.4.1",
     "@expo-google-fonts/barlow-condensed": "^0.4.1",
+    "@expo-google-fonts/mr-dafoe": "^0.4.1",
+    "@expo-google-fonts/unbounded": "^0.4.1",
     "@phosphor-icons/react": "^2.1.10",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",

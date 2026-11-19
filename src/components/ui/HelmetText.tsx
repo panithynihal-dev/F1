@@ -3,6 +3,16 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { fluid, fluidNames, useFluidActive } from '@/components/fluid/registry';
 import type { FlowPalette } from '@/logic/helmets';
 
+const FONTS = {
+  // The italic leans past the box on the right; a little room keeps the last letter's colour.
+  title: { fontFamily: 'BarlowCondensed_800ExtraBold_Italic', textTransform: 'uppercase', paddingRight: '0.08em' },
+  // Script swashes reach well outside the text box, and the colour is clipped to that box, so the
+  // box is padded out and pulled back with a negative margin (the layout doesn't move). The left
+  // margin pulls back a little less, so opening swashes (the "L" of Lando) don't hang off the edge.
+  signature: { fontFamily: 'MrDafoe_400Regular', textTransform: 'none', wordSpacing: '0.2em', padding: '0.3em', margin: '-0.3em -0.3em -0.3em -0.15em' },
+  wide: { fontFamily: 'Unbounded_800ExtraBold', textTransform: 'uppercase', letterSpacing: '-0.01em' },
+} satisfies Record<string, CSSProperties>;
+
 /**
  * A name in its owner's helmet (or team) colours, moving like liquid.
  *
@@ -20,6 +30,7 @@ export function HelmetText({
   as: Tag = 'span',
   className = '',
   fluid: wantsFluid = false,
+  font = 'title',
 }: {
   children: string;
   palette: FlowPalette;
@@ -29,6 +40,8 @@ export function HelmetText({
   className?: string;
   /** Paint this name with the live fluid simulation (the Home hero and driver page headers). */
   fluid?: boolean;
+  /** title = the site's condensed italic caps; signature = brush script first name; wide = heavy wide caps surname. */
+  font?: keyof typeof FONTS;
 }) {
   const ref = useRef<HTMLElement>(null);
   const fluidOn = useFluidActive() && wantsFluid;
@@ -59,15 +72,12 @@ export function HelmetText({
           '--hf-b': blob(b, '70%', '65%', 1.2, 0.8),
           '--hf-c': blob(c, '45%', '80%', 0.6, 0.4),
         }),
-    fontFamily: 'BarlowCondensed_800ExtraBold_Italic',
     fontSize: size,
     lineHeight,
-    textTransform: 'uppercase',
     display: 'block',
     whiteSpace: 'pre-line',
     margin: 0,
-    // The italic leans past the box on the right; a little room keeps the last letter's colour.
-    paddingRight: '0.08em',
+    ...FONTS[font],
   } as CSSProperties;
   return (
     <Tag ref={ref as never} className={`${fluidOn ? '' : 'tm-helmet'} ${className}`} style={style}>

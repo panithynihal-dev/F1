@@ -35,6 +35,9 @@ module.exports = {
         'body-medium': ['Barlow_500Medium'],
         'body-semi': ['Barlow_600SemiBold'],
         'body-bold': ['Barlow_700Bold'],
+        // Driver name lockup: the first name as a brush signature over a wide, heavy surname.
+        signature: ['MrDafoe_400Regular'],
+        wide: ['Unbounded_800ExtraBold'],
       },
       borderRadius: {
         badge: '0px',
