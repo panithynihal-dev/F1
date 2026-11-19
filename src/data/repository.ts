@@ -72,12 +72,22 @@ export interface LastRaceResults {
 }
 
 /**
- * The most recent round's podium, or null before the first race and in the gap between the flag
- * and the classification being published. Keyed by round, so next week's race gets its own entry.
+ * The most recent round with a published result. In the hours between the chequered flag and the
+ * classification being published, that's still the round before (so the Home page keeps showing
+ * the previous winner instead of nothing); null only before the first race.
  */
 export async function getLastRaceResults(): Promise<LastRaceResults | null> {
-  const race = lastStartedRace(await getSchedule());
+  const schedule = await getSchedule();
+  const race = lastStartedRace(schedule);
   if (!race) return null;
+  const latest = await roundResults(race);
+  if (latest) return latest;
+  const before = schedule.find((r) => Number(r.round) === Number(race.round) - 1);
+  return before ? roundResults(before) : null;
+}
+
+/** One round's podium and classification, or null until it's published. Keyed by round. */
+function roundResults(race: RaceSchedule): Promise<LastRaceResults | null> {
   return cached(
     `last_race_results_v2_${race.season}_${race.round}`,
     async () => {

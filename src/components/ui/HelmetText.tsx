@@ -30,6 +30,7 @@ export function HelmetText({
   as: Tag = 'span',
   className = '',
   fluid: wantsFluid = false,
+  still = false,
   font = 'title',
 }: {
   children: string;
@@ -40,7 +41,9 @@ export function HelmetText({
   className?: string;
   /** Paint this name with the live fluid simulation (the Home hero and driver page headers). */
   fluid?: boolean;
-  /** title = the site's condensed italic caps; signature = brush script first name; wide = heavy wide caps surname. */
+  /** Keep the colours but hold them still (no drift, no fluid). */
+  still?: boolean;
+  /** title =the site's condensed italic caps; signature = brush script first name; wide = heavy wide caps surname. */
   font?: keyof typeof FONTS;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -80,7 +83,7 @@ export function HelmetText({
     ...FONTS[font],
   } as CSSProperties;
   return (
-    <Tag ref={ref as never} className={`${fluidOn ? '' : 'tm-helmet'} ${className}`} style={style}>
+    <Tag ref={ref as never} className={`${fluidOn ? '' : 'tm-helmet'} ${still ? 'tm-helmet-still' : ''} ${className}`} style={style}>
       {children}
     </Tag>
   );

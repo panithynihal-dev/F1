@@ -109,6 +109,12 @@ body,
   color: transparent;
   animation: tm-helmet-drift 12s ease-in-out infinite alternate;
 }
+/* Same colours, held still (Calendar race names): no drift. They sit on circuit photos, so a soft
+   dark shadow keeps them readable on bright ones (a drop-shadow filter works with clipped text). */
+.tm-helmet.tm-helmet-still {
+  animation: none;
+  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.75));
+}
 @keyframes tm-helmet-drift {
   0% {
     background-position: 0% 0%, 100% 50%, 30% 100%, 0 0;

@@ -2,21 +2,35 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import type { QualifyingResult, Session } from '@/api/types';
 import { Card, Page } from '@/components/layout/Page';
 import { Classification, PodiumBand, RaceFacts } from '@/components/results/RaceSummary';
 import { StandingRow } from '@/components/StandingRow';
 import { PrimaryButton } from '@/components/ui/Buttons';
+import { DriverName, ScriptName } from '@/components/ui/DriverName';
 import { EmptyState, ErrorState, errorMessage, PageLoading, SkeletonRows } from '@/components/ui/States';
 import { getMeetings, getSeasonSessionTimeline, getSession } from '@/data/repository';
 import { getSessionContent, type DriverLapSummary } from '@/data/sessionContent';
 import { formatLapTime, formatViewerTime, sessionStart } from '@/logic/dates';
+import { flagPalette, raceTitleParts } from '@/logic/flags';
+
+/** The race name, F1 style: "São Paulo" in script over "GRAND PRIX", flowing in the host country's flag colours. */
+function RaceTitle({ name, country, wide }: { name: string; country?: string | null; wide: boolean }) {
+  const palette = flagPalette(country);
+  const { script, wide: caps } = raceTitleParts(name);
+  return caps ? (
+    <DriverName given={script} family={caps} palette={palette} maxSize={wide ? 96 : 48} as="h1" fluid />
+  ) : (
+    <ScriptName text={script} palette={palette} maxSize={wide ? 130 : 72} as="h1" fluid />
+  );
+}
 
 export default function SessionResults() {
   const { sessionKey } = useLocalSearchParams<{ sessionKey: string }>();
   const key = Number(sessionKey);
+  const wide = useWindowDimensions().width >= 768;
 
   const timeline = useQuery({ queryKey: ['timeline'], queryFn: getSeasonSessionTimeline });
   // A session outside this season's timeline (an old shared link) is still looked up directly.
@@ -63,15 +77,14 @@ export default function SessionResults() {
       header={
         <View className="gap-6">
           <View className="flex-row flex-wrap items-end justify-between gap-4">
-            <View className="min-w-0 max-w-full shrink gap-1.5">
+            {/* Full width on a phone (the replay button drops below); shares the row on desktop. */}
+            <View className="min-w-0 max-w-full flex-1 basis-full gap-1.5 md:basis-0">
               <Text className="font-display-semi text-[15px] tracking-[0.04em] text-red">
                 {[session.session_name, session.circuit_short_name, start ? new Date(start).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : null, start ? formatViewerTime(start) : null]
                   .filter(Boolean)
                   .join(', ')}
               </Text>
-              <Text accessibilityRole="header" className="font-title text-[52px] uppercase leading-[48px] text-paper md:text-[88px] md:leading-[81px]">
-                {meeting?.meeting_name ?? meetingName}
-              </Text>
+              <RaceTitle name={meeting?.meeting_name ?? meetingName} country={meeting?.country_name ?? session.country_name} wide={wide} />
             </View>
             <View className="flex-row gap-2">
               {session.session_type === 'Race' ? <PrimaryButton href={`/replay/${session.session_key}`}>Watch the replay</PrimaryButton> : null}

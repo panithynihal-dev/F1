@@ -1,15 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import Head from 'expo-router/head';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 
 import type { RaceSchedule } from '@/api/types';
 import { Band, Page, PageTitle, SectionTitle } from '@/components/layout/Page';
 import { CreditedImage, PhotoCredit } from '@/components/ui/CreditedImage';
+import { DriverName, ScriptName } from '@/components/ui/DriverName';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { circuitPhoto } from '@/data/photos';
 import { getSchedule, getSeasonSessionTimeline, getSeasonWinners, nextRace, type RoundWinner } from '@/data/repository';
 import { formatDayMonth, formatViewerTime, formatViewerWeekday, raceStart, sessionStart, utcDay, viewerTimeZoneName } from '@/logic/dates';
+import { flagPalette, raceTitleParts } from '@/logic/flags';
 import { teamBrand } from '@/logic/teamBrand';
 import { isSprintWeekend, weekendSessions } from '@/logic/weekend';
 import { useNow } from '@/hooks/useNow';
@@ -46,6 +48,7 @@ export default function Calendar() {
         header={
           <View className="gap-7">
             <PageTitle
+              script
               title="Calendar"
               kicker={`${races[0]?.season ?? ''} season. ${finished.length} of ${races.length} rounds run. Times are in your timezone (${viewerTimeZoneName()}).`}
             />
@@ -59,7 +62,7 @@ export default function Calendar() {
 
         {featured ? (
           <View>
-            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>}>Still to come</SectionTitle>
+            <SectionTitle aside={<Text className="font-body text-[14px] text-muted">{upcoming.length} {upcoming.length === 1 ? 'round' : 'rounds'}</Text>} script>Still to come</SectionTitle>
             <View className="gap-3 lg:flex-row">
               <View className="lg:flex-[2]">
                 <FeaturedRound race={featured} now={now} />
@@ -142,7 +145,19 @@ const dateRange = (race: RaceSchedule) => {
   return first?.start ? `${formatViewerWeekday(first.start)} ${formatDayMonth(new Date(first.start).toISOString().slice(0, 10))} to ${formatDayMonth(race.date)}` : formatDayMonth(race.date);
 };
 
+/** The race name, F1 style, in the host country's flag colours held still (no motion on this page). */
+function RaceName({ race, maxSize }: { race: RaceSchedule; maxSize: number }) {
+  const palette = flagPalette(race.Circuit.Location.country);
+  const { script, wide } = raceTitleParts(race.raceName);
+  return wide ? (
+    <DriverName given={script} family={wide} palette={palette} maxSize={maxSize} still />
+  ) : (
+    <ScriptName text={script} palette={palette} maxSize={Math.round(maxSize * 1.6)} as="h3" still />
+  );
+}
+
 function FeaturedRound({ race, now }: { race: RaceSchedule; now: number }) {
+  const phone = useWindowDimensions().width < 768;
   const sessions = weekendSessions(race);
   const start = raceStart(race);
   const days = start ? Math.max(0, Math.ceil((start - now) / 86_400_000)) : null;
@@ -157,9 +172,9 @@ function FeaturedRound({ race, now }: { race: RaceSchedule; now: number }) {
           </Text>
           {days != null ? <Text className="font-display text-[16px] text-red">{days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`}</Text> : null}
         </View>
-        <Text className="mt-3 font-title text-[34px] uppercase leading-[32px] text-paper md:text-[56px] md:leading-[52px]">
-          {race.raceName.replace(' Grand Prix', '\nGrand Prix')}
-        </Text>
+        <View className="mt-3 max-w-[640px]">
+          <RaceName race={race} maxSize={phone ? 34 : 56} />
+        </View>
         <Text className="mt-2 font-body text-[15px] text-muted">
           {race.Circuit.circuitName}, {race.Circuit.Location.country}
         </Text>
@@ -192,7 +207,9 @@ function UpcomingCard({ race }: { race: RaceSchedule }) {
           </Text>
           <Text className="font-display text-[16px] text-muted">{dateRange(race)}</Text>
         </View>
-        <Text className="mt-3 font-title text-[34px] uppercase leading-[32px] text-paper">{race.raceName}</Text>
+        <View className="mt-3">
+          <RaceName race={race} maxSize={34} />
+        </View>
         <Text className="mt-2 font-body text-[15px] text-muted">
           {race.Circuit.circuitName}, {race.Circuit.Location.country}
         </Text>

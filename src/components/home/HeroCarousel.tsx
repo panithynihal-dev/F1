@@ -6,6 +6,7 @@ import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
 import { CreditedImage } from '@/components/ui/CreditedImage';
+import { DriverName, ScriptName } from '@/components/ui/DriverName';
 import { HelmetText } from '@/components/ui/HelmetText';
 import type { Photo } from '@/data/photos';
 import type { FlowPalette } from '@/logic/helmets';
@@ -21,8 +22,15 @@ export interface HeroSlide {
   gold?: boolean;
   /** Title lines, joined with a line break. */
   title: string[];
-  /** Fill the title with someone's helmet or team colours. */
+  /** Fill the title with someone's helmet, team or flag colours. */
   palette?: FlowPalette;
+  /**
+   * Draw the name as a signature instead of `title`:
+   *   lockup = a script line over a wide line ("Lando" / "NORRIS", "Las Vegas" / "GRAND PRIX"),
+   *            with an optional line under it ("Wins in São Paulo");
+   *   script = the whole name in script ("Mercedes").
+   */
+  name?: { kind: 'lockup'; script: string; wide: string; after?: string } | { kind: 'script'; text: string };
   sub: string;
   stats: { value: string; label: string }[];
   primary: { label: string; href: Href };
@@ -142,7 +150,22 @@ function Slide({ slide: s, phone, eager }: { slide: HeroSlide; phone: boolean; e
             <Text className={`font-display text-[17px] uppercase tracking-[0.04em] ${s.gold ? 'text-ground' : 'text-white'}`}>{s.kicker}</Text>
           </View>
           <View className="mt-3.5">
-            {s.palette ? (
+            {s.name?.kind === 'lockup' && s.palette ? (
+              <View className="max-w-[1000px]">
+                <DriverName given={s.name.script} family={s.name.wide} palette={s.palette} maxSize={phone ? 56 : 112} as="h2" fluid />
+                {s.name.after ? (
+                  <View className="mt-2">
+                    <HelmetText palette={s.palette} size={phone ? 30 : 48} fluid>
+                      {s.name.after}
+                    </HelmetText>
+                  </View>
+                ) : null}
+              </View>
+            ) : s.name?.kind === 'script' && s.palette ? (
+              <View className="max-w-[1000px]">
+                <ScriptName text={s.name.text} palette={s.palette} maxSize={phone ? 84 : 150} fluid />
+              </View>
+            ) : s.palette ? (
               <HelmetText palette={s.palette} size={titleSize} as="h2" fluid>
                 {s.title.join('\n')}
               </HelmetText>

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Head from 'expo-router/head';
 import { useMemo } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
@@ -12,11 +12,17 @@ import { Band, Page, SectionTitle } from '@/components/layout/Page';
 import { SecondaryButton } from '@/components/ui/Buttons';
 import { ErrorState, errorMessage, PageLoading } from '@/components/ui/States';
 import { actionPhoto, celebrationPhoto, circuitPhoto, teamPhoto } from '@/data/photos';
-import { getConstructorStandings, getDriverStandings, getLastRaceResults, getSchedule, nextRace, type LastRaceResults } from '@/data/repository';
+import { getConstructorStandings, getDriverStandings, getLastRaceResults, getSchedule, lastStartedRace, nextRace, type LastRaceResults } from '@/data/repository';
+import { flagPalette, raceTitleParts } from '@/logic/flags';
 import { isClinched, maxPointsLeft, racesLeft } from '@/logic/clinch';
 import { formatViewerTime, formatViewerWeekday, raceStart, viewerTimeZoneName } from '@/logic/dates';
 import { driverPalette, teamPalette } from '@/logic/helmets';
 import { useNow } from '@/hooks/useNow';
+
+const raceName = (name: string): HeroSlide['name'] => {
+  const { script, wide } = raceTitleParts(name);
+  return wide ? { kind: 'lockup', script, wide } : { kind: 'script', text: script };
+};
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const ordinalWord = (n: number) => (['first', 'second', 'third'][n - 1] ?? `${n}th`);
@@ -25,17 +31,34 @@ export default function Home() {
   const schedule = useQuery({ queryKey: ['schedule'], queryFn: getSchedule });
   // Ticks each minute, so the page rolls on to the next round once a race starts.
   const now = useNow();
-  const drivers = useQuery({ queryKey: ['driverStandings'], queryFn: getDriverStandings });
-  const constructors = useQuery({ queryKey: ['constructorStandings'], queryFn: getConstructorStandings });
-  const lastRace = useQuery({ queryKey: ['lastRace'], queryFn: getLastRaceResults });
+
+  // The page keeps itself current over a race weekend, even if it was opened before the race:
+  // the queries are keyed by the round that last started, so they ask again the moment a new race
+  // starts, and keep asking every few minutes until that race's results are published. Until then
+  // getLastRaceResults returns the round before, so the previous winner stays on the hero.
+  const started = schedule.data ? lastStartedRace(schedule.data, now) : null;
+  const startedRound = started?.round ?? '0';
+  const weekend = !!started && now - (raceStart(started) ?? 0) < 2 * 86_400_000;
+  const lastRace = useQuery({
+    queryKey: ['lastRace', startedRound],
+    queryFn: getLastRaceResults,
+    enabled: !!schedule.data,
+    placeholderData: keepPreviousData,
+    refetchInterval: (q) => (q.state.data?.round === startedRound || !started ? false : 5 * 60_000),
+  });
+  // Standings land around the same time as the results; refresh them through the weekend.
+  const standingsRefresh = weekend ? 10 * 60_000 : false;
+  const drivers = useQuery({ queryKey: ['driverStandings', startedRound], queryFn: getDriverStandings, placeholderData: keepPreviousData, refetchInterval: standingsRefresh });
+  const constructors = useQuery({ queryKey: ['constructorStandings', startedRound], queryFn: getConstructorStandings, placeholderData: keepPreviousData, refetchInterval: standingsRefresh });
+  const shownLast = lastRace.data;
   const { width } = useWindowDimensions();
   const phone = width < 768;
 
   const race = schedule.data ? nextRace(schedule.data, now) : null;
   const slides = useMemo(
-    () => (schedule.data ? buildSlides(schedule.data, race, now, drivers.data, constructors.data, lastRace.data) : []),
+    () => (schedule.data ? buildSlides(schedule.data, race, now, drivers.data, constructors.data, shownLast) : []),
     // Minute-level `now` is enough: the countdown on the slide is days / hours / minutes.
-    [schedule.data, race, now, drivers.data, constructors.data, lastRace.data],
+    [schedule.data, race, now, drivers.data, constructors.data, shownLast],
   );
 
   if (schedule.isPending) return <PageLoading />;
@@ -49,7 +72,7 @@ export default function Home() {
 
   const pointsLeft = maxPointsLeft(schedule.data, 'drivers', now);
   const decided = !!drivers.data && isClinched(drivers.data.map((s) => Number(s.points)), pointsLeft);
-  const afterRound = lastRace.data?.round;
+  const afterRound = shownLast?.round;
   const second = drivers.data ? fightForSecond(drivers.data, pointsLeft) : null;
   return (
     <>
@@ -67,10 +90,10 @@ export default function Home() {
       <Page>
         <View>
           <View className="gap-14 lg:flex-row lg:gap-[72px] 2xl:gap-24">
-            {lastRace.data ? (
+            {shownLast ? (
               <View className="lg:w-[520px] 2xl:w-[600px]">
-                <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {lastRace.data.round}</Text>}>{lastRace.data.raceName}</SectionTitle>
-                <Podium podium={lastRace.data.podium} results={lastRace.data.results} compact={phone} />
+                <SectionTitle aside={<Text className="font-body text-[14px] text-muted">Round {shownLast.round}</Text>}>{shownLast.raceName}</SectionTitle>
+                <Podium podium={shownLast.podium} results={shownLast.results} compact={phone} />
                 <View className="mt-6">
                   <SecondaryButton href="/results">Full result</SecondaryButton>
                 </View>
@@ -117,6 +140,10 @@ function buildSlides(
       label: `${started ? 'Racing now' : 'Up next'}: ${name}`,
       kicker: `Round ${race.round} of ${schedule.length}`,
       title: race.raceName.includes('Grand Prix') ? [name, 'Grand Prix'] : [race.raceName],
+      // "Las Vegas" in script over "GRAND PRIX", flowing in the host country's flag colours. A name
+      // that doesn't end in "Grand Prix" ("Bahrain Grand Prix in Malaysia") goes all in script.
+      palette: flagPalette(race.Circuit.Location.country),
+      name: raceName(race.raceName),
       sub: started
         ? `${race.Circuit.circuitName}. The race is on now.`
         : `${race.Circuit.circuitName}. Lights out ${formatViewerWeekday(start)} ${race.time ? formatViewerTime(start) : ''} your time (${viewerTimeZoneName()}).`,
@@ -145,6 +172,7 @@ function buildSlides(
       kicker: champion ? `${season} World Champion` : 'Championship leader',
       gold: champion,
       title: [leader.Driver.givenName, leader.Driver.familyName],
+      name: { kind: 'lockup', script: leader.Driver.givenName, wide: leader.Driver.familyName },
       palette: driverPalette(leader.Driver.driverId, team),
       sub: champion
         ? roundsLeft
@@ -172,6 +200,12 @@ function buildSlides(
       label: `${last.raceName.replace(' Grand Prix', '')}: ${winner.Driver.familyName} wins`,
       kicker: `Round ${last.round} result`,
       title: locality ? [`${winner.Driver.familyName} wins`, `in ${locality}`] : [`${winner.Driver.familyName} wins`],
+      name: {
+        kind: 'lockup',
+        script: winner.Driver.givenName,
+        wide: winner.Driver.familyName,
+        after: locality ? `Wins in ${locality}` : 'Wins',
+      },
       palette: driverPalette(winner.Driver.driverId, winner.Constructor.name),
       sub: [
         fromPole ? 'Won from pole.' : `Won from ${winner.grid === '0' ? 'the pit lane' : `P${winner.grid}`}.`,
@@ -204,6 +238,7 @@ function buildSlides(
       kicker: champion ? `${season} Constructors’ Champion` : 'Constructors’ leader',
       gold: champion,
       title: [teamLeader.Constructor.name],
+      name: { kind: 'script', text: teamLeader.Constructor.name },
       palette: teamPalette(id, teamLeader.Constructor.name),
       sub: champion
         ? `Decided with ${plural(roundsLeft, 'round')} to spare, ${gap} points clear of ${runnerUp?.Constructor.name ?? 'the rest'}.`

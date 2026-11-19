@@ -13,10 +13,10 @@ export interface FlowPalette {
   accents: [string, string, string];
 }
 
-type Helmet = [main: string, second: string, third: string];
+export type Helmet = [main: string, second: string, third: string];
 
 /** Three helmet colours, most-used first. The third swirl re-uses the main colour, so only these three show. */
-const fromHelmet = ([main, second, third]: Helmet): FlowPalette => ({ base: main, accents: [second, third, main] });
+export const fromHelmet =([main, second, third]: Helmet): FlowPalette => ({ base: main, accents: [second, third, main] });
 
 const HELMETS: Record<string, Helmet> = {
   // Mercedes
