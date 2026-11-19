@@ -71,7 +71,6 @@ src/
                   home/  results/  standings/  replay/  stats/ (driver + team pages)
                   layout/  (page frame, nav, footer)
                   ui/      (buttons, tabs, HelmetText, CreditedImage, loading states…)
-                  three/   (the 3D replay view, loaded only on the replay page)
                   fluid/   (the liquid helmet-colour effect on names: one WebGL fluid
                             simulation for the whole page, loaded after the page is up)
   api/          Talks to OpenF1 and Jolpica: one function per kind of request, plus their types.

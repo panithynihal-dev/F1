@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { Page } from '@/components/layout/Page';
@@ -27,12 +27,8 @@ import {
 import { prepareLeaderboard, rowsAt } from '@/logic/leaderboard';
 import { formatLapRange, lapWindows, type LapRange } from '@/logic/lapWindows';
 import { INCIDENT_DISPLAY_MS, lapInProgressAt, type RaceIncident } from '@/logic/raceIncidents';
-import { hasWebGL } from '@/hooks/useReducedMotion';
 
 const DEFAULT_SPEED: Speed = 4;
-
-// three.js loads only when someone switches to the 3D view.
-const ReplayScene = lazy(() => import('@/components/three/scenes').then((m) => ({ default: m.ReplayScene })));
 
 export default function Replay() {
   const params = useLocalSearchParams<{ sessionKey: string; laps?: string; from?: string; t?: string }>();
@@ -216,16 +212,6 @@ function ReplayStage({
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState<Speed>(DEFAULT_SPEED);
   const [highlighted, setHighlighted] = useState<number | null>(null);
-  const webgl = useMemo(() => hasWebGL(), []);
-  const [mode, setModeState] = useState<ViewMode>(readViewMode);
-  const setMode = (next: ViewMode) => {
-    setModeState(next);
-    try {
-      localStorage.setItem(VIEW_MODE_KEY, next);
-    } catch {
-      // A private window just won't remember the choice.
-    }
-  };
   // The map draws every frame straight from the clock ref; everything else on the page reads this
   // copy of it, refreshed four times a second, so the page isn't re-rendering at sixty frames.
   const [elapsed, setElapsed] = useState(initialMs);
@@ -351,9 +337,6 @@ function ReplayStage({
           {rows[0] ? <LeaderCallout acronym={rows[0].acronym} name={rows[0].name} team={rows[0].teamName} wide={wide} /> : null}
           {formation ? <Badge tone="muted">Formation lap</Badge> : null}
           {safetyCar ? <Badge tone="yellow">Safety car</Badge> : null}
-          <View className="ml-auto">
-            {webgl ? <ViewModeSwitch mode={mode} onChange={setMode} /> : null}
-          </View>
           {restartLap ? (
             <Pressable
               onPress={() => {
@@ -368,21 +351,15 @@ function ReplayStage({
         </View>
 
         <View className="relative overflow-hidden border border-line bg-ground" style={{ height: wide ? 'min(68vh, 720px)' : '58vh' } as object}>
-          {mode === '3d' && webgl ? (
-            <Suspense fallback={<ReplayLoading caption="Building the 3D view…" inline />}>
-              <ReplayScene outline={data.outline} tracks={data.tracks} clock={clock} visible={visibleRef} highlighted={highlightRef} />
-            </Suspense>
-          ) : (
-            <TrackCanvas
-              outline={data.outline}
-              tracks={data.tracks}
-              startFinish={data.startFinish}
-              clock={clock}
-              visible={visibleRef}
-              highlighted={highlightRef}
-              viewRef={view}
-            />
-          )}
+          <TrackCanvas
+            outline={data.outline}
+            tracks={data.tracks}
+            startFinish={data.startFinish}
+            clock={clock}
+            visible={visibleRef}
+            highlighted={highlightRef}
+            viewRef={view}
+          />
           {incident ? <IncidentCaption incident={incident} /> : null}
           {ended && nextWindow ? (
             <View className="absolute inset-x-0 bottom-4 items-center">
@@ -392,7 +369,7 @@ function ReplayStage({
             </View>
           ) : null}
           <Text className="pointer-events-none absolute right-3 top-2.5 font-body text-[12px] text-muted">
-            {mode === '3d' ? 'Drag to orbit, scroll to zoom, right-drag to pan' : 'Scroll to zoom, drag to move, double-click to reset'}
+            Scroll to zoom, drag to move, double-click to reset
           </Text>
         </View>
 
@@ -419,35 +396,6 @@ function ReplayStage({
         </View>
         <RaceControlFeed messages={bundle.raceControl} at={at} />
       </View>
-    </View>
-  );
-}
-
-type ViewMode = '2d' | '3d';
-const VIEW_MODE_KEY = 'trackimetrix.replayView';
-const readViewMode = (): ViewMode => {
-  try {
-    return localStorage.getItem(VIEW_MODE_KEY) === '3d' ? '3d' : '2d';
-  } catch {
-    return '2d';
-  }
-};
-
-/** Flat map or 3D: the same replay, the same clock, two ways to look at it. */
-function ViewModeSwitch({ mode, onChange }: { mode: ViewMode; onChange: (mode: ViewMode) => void }) {
-  return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Replay view" className="flex-row border border-line">
-      {(['2d', '3d'] as const).map((m) => (
-        <Pressable
-          key={m}
-          onPress={() => onChange(m)}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: mode === m }}
-          className={`px-4 py-1.5 transition-colors ${mode === m ? 'bg-paper' : 'hover:bg-lifted'}`}
-        >
-          <Text className={`font-display text-[15px] uppercase ${mode === m ? 'text-ground' : 'text-muted'}`}>{m === '2d' ? 'Map' : '3D'}</Text>
-        </Pressable>
-      ))}
     </View>
   );
 }
